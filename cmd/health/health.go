@@ -3,6 +3,7 @@ package health
 import (
 	"net/http"
 
+	"github.com/MatthewAraujo/notify/cmd/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -18,5 +19,5 @@ func (h *Handler) Register(mux *mux.Router) {
 }
 
 func (h *Handler) healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+	utils.WriteJSON(w, http.StatusOK, "api is on")
 }
