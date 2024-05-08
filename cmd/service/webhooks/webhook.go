@@ -1,9 +1,10 @@
 package webhooks
 
 import (
-	"fmt"
 	"net/http"
 
+	"github.com/MatthewAraujo/notify/cmd/service/mailer"
+	"github.com/MatthewAraujo/notify/cmd/types"
 	"github.com/MatthewAraujo/notify/cmd/utils"
 	"github.com/gorilla/mux"
 )
@@ -19,12 +20,26 @@ func (h *Handler) Register(mux *mux.Router) {
 }
 
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
-	var payload any
+	var payload types.GithubWebhooks
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	fmt.Print(payload)
+	if err := utils.Validate.Struct(payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	bodyEmail := types.SendEmail{
+		RepoName: payload.Repository.FullName,
+		Sender:   payload.Repository.Owner.Name,
+		Commit:   payload.Commits[0].Message,
+		Email:    payload.Repository.Owner.Email,
+	}
+
+	go mailer.SendMail(bodyEmail)
+
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "Email enviado com sucesso"})
 
 }
