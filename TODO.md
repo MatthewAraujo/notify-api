@@ -1,5 +1,5 @@
 [] - notify
-[] - Get what i want from the json
+[X] - Get what i want from the json
 [] - Send a email
 [] - Test with a real webhook
 [] - What to notify
