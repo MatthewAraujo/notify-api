@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"fmt"
+	"log"
 	"net/smtp"
 	"os"
 
@@ -44,4 +45,6 @@ func SendMail(user types.SendEmail) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	log.Println("Email sent to", user.Email)
 }
