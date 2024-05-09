@@ -1,11 +1,13 @@
 package webhooks
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/cmd/service/mailer"
 	"github.com/MatthewAraujo/notify/cmd/types"
 	"github.com/MatthewAraujo/notify/cmd/utils"
+	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 )
 
@@ -16,7 +18,7 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Register(mux *mux.Router) {
-	mux.HandleFunc("/webhooks", h.webhooksHandler).Methods("POST")
+	mux.HandleFunc("/webhooks", h.webhooksHandler).Methods(http.MethodPost)
 }
 
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,9 +27,9 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	if err := utils.Validate.Struct(payload); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
 		return
 	}
 

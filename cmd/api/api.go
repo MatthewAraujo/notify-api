@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/cmd/health"
+	"github.com/MatthewAraujo/notify/cmd/service/notifications"
 	"github.com/MatthewAraujo/notify/cmd/service/webhooks"
 	"github.com/gorilla/mux"
 )
@@ -29,6 +30,10 @@ func (s *APIServer) Start() error {
 
 	webhooksHandler := webhooks.NewHandler()
 	webhooksHandler.Register(subrouter)
+
+	notificationHandler := notifications.NewHandler()
+	notificationHandler.Register(subrouter)
+
 	log.Println("Starting server on", s.addr)
 
 	return http.ListenAndServe(s.addr, router)
