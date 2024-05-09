@@ -1,6 +1,6 @@
 [] - notify
 [X] - Get what i want from the json
-[] - Send a email
+[X] - Send a email
 [] - Test with a real webhook
 [] - What to notify
 [] - A way to choose what i want the repo notify
