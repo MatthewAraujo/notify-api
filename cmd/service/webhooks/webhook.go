@@ -39,7 +39,4 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go mailer.SendMail(bodyEmail)
-
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "Email enviado com sucesso"})
-
 }
