@@ -22,7 +22,7 @@ func CreateWebhook(username string, reponame string, events []string) error {
 	token := os.Getenv("GITHUB_API_KEY")
 
 	// create a webhook
-	serverUrl := "https://boring-orange-82.webhook.cool"
+	serverUrl := os.Getenv("WEBHOOK_TEST")
 	githubUrl := "https://api.github.com/"
 	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks"
 
