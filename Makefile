@@ -1,5 +1,5 @@
 build:
-	@go build -o bin/check cmd/main.go
+	@go build -o bin/notify cmd/main.go
 
 run: build
 	@./bin/check
