@@ -33,7 +33,7 @@ type NotificationStore interface {
 	CreateNotification(notif Notifications) error
 }
 type Notifications struct {
-	UserId   uuid.UUID       `json:"user_id"`
-	RepoName string          `json:"repository_name"`
-	Events   map[string]bool `json:"events"`
+	UserId   uuid.UUID `json:"user_id"`
+	RepoName string    `json:"repository_name"`
+	Events   []string  `json:"events"`
 }

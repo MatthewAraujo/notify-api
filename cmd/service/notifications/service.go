@@ -39,6 +39,7 @@ func CreateWebhook(username string, reponame string, events []string) error {
 	err = sendPayloadToGitHub(url, token, payloadBytes)
 	if err != nil {
 		return err
+
 	}
 
 	return err

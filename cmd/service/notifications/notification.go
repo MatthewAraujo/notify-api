@@ -40,5 +40,11 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("%+v\n", payload)
+	err := CreateWebhook("MatthewAraujo", payload.RepoName, payload.Events)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, payload)
 }
