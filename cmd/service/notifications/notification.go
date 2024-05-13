@@ -24,7 +24,6 @@ func NewHandler(
 
 func (h *Handler) Register(router *mux.Router) {
 	router.HandleFunc("/notification", h.CreateNotification).Methods(http.MethodPost)
-
 }
 
 func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
