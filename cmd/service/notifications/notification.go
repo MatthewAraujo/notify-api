@@ -38,12 +38,13 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
 		return
 	}
+	username := "vtrdiego"
 
-	err := CreateWebhook("MatthewAraujo", payload.RepoName, payload.Events)
+	err := CreateWebhook(username, payload.RepoName, payload.Events)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, payload)
+	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Webhook created for %s", payload.RepoName))
 }

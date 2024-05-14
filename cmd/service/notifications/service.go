@@ -60,10 +60,10 @@ func generateAccessToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("JWT: %s", jwt)
 
 	// how i will get this????
-	installationID := "50690203"
+	// i wuill get this from the database
+	installationID := "50730929"
 	accessToken, err := getInstallationAccessToken(installationID, jwt)
 	if err != nil {
 		return "", err
