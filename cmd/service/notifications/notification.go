@@ -24,7 +24,6 @@ func NewHandler(
 
 func (h *Handler) Register(router *mux.Router) {
 	router.HandleFunc("/notification", h.CreateNotification).Methods(http.MethodPost)
-
 }
 
 func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +38,13 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
 		return
 	}
+	username := "vtrdiego"
 
-	fmt.Printf("%+v\n", payload)
+	err := CreateWebhook(username, payload.RepoName, payload.Events)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Webhook created for %s", payload.RepoName))
 }
