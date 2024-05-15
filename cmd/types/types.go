@@ -2,6 +2,18 @@ package types
 
 import "github.com/google/uuid"
 
+type InstallationWebhooks struct {
+	Installation struct {
+		Id      int `json:"id"`
+		Account struct {
+			Login string `json:"login"`
+		}
+	} `json:"installation"`
+	Repositories []struct {
+		Name string `json:"name"`
+	}
+}
+
 type GithubWebhooks struct {
 	Repository struct {
 		FullName string `json:"full_name"`
