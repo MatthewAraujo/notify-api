@@ -15,6 +15,7 @@ criar um banco de dados, motivos:
 preciso colocar o instalation ID e associar com usuario
 preciso adicionar os usuarios
 preciso saber quais repositorios do usuario ele esta usando meu app
+crio um JWT salvo no bd pra saber se ainda esta ativo?
 
 rota de webhooks:
 rota para receber cada requisição da instalacao do APP
