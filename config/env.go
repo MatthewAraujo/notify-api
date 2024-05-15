@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -14,38 +15,22 @@ type SMTP struct {
 }
 
 type Config struct {
-	TursoUrl      string
-	TursoToken    string
-	TursoUrlToken string
-	SMTP          SMTP
-	Port          string
+	Port     string
+	TursoURl string
+	SMTP     SMTP
 }
 
 var Envs = initConfig()
 
 func initConfig() Config {
 	godotenv.Load()
-	env := os.Getenv("PROD")
 
-	if env == "prod" {
-		return Config{
-			TursoUrl:      getEnv("TURSO_DATABASE_URL", "http://localhost:8080"),
-			TursoToken:    getEnv("TURSO_AUTH_TOKEN", "mytoken"),
-			TursoUrlToken: getEnv("TURSO_DATABASE_URL_TOKEN", "http://localhost:8080"),
-			Port:          getEnv("PORT", "8080"),
-			SMTP: SMTP{
-				Host:     getEnv("SMTP_HOST", "smtp.gmail.com"),
-				Port:     getEnv("SMTP_PORT", "587"),
-				Author:   getEnv("SMTP_AUTHOR", "my_user@gmail.com"),
-				Password: getEnv("SMTP_PASSWORD", "mypassword"),
-			},
-		}
-	}
+	tursoUrl := getEnv("TURSO_DATABASE_URL", "localhost:3306")
+	tursoToken := getEnv("TURSO_AUTH_TOKEN", "mytoken")
 
 	return Config{
-		TursoUrl:   getEnv("TURSO_DATABASE_URL", "http://localhost:8080"),
-		TursoToken: getEnv("TURSO_AUTH_TOKEN", "mytoken"),
-		Port:       getEnv("PORT", "8080"),
+		Port:     getEnv("PORT", "8080"),
+		TursoURl: fmt.Sprintf("%s?authToken=%s", tursoUrl, tursoToken),
 		SMTP: SMTP{
 			Host:     getEnv("SMTP_HOST", "smtp.gmail.com"),
 			Port:     getEnv("SMTP_PORT", "587"),

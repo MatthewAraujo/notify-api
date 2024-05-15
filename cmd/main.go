@@ -11,8 +11,7 @@ import (
 
 func main() {
 
-	url := "libsql://notify-api-matthewaraujo.turso.io?authToken=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3MTU3OTE0NDMsImlkIjoiNGZlYjBlZjgtNGJmNS00MjFmLWIxOWMtYjkwYjIyZDNhMjZjIn0.ErOgXIPAAoVxH62MU-x9pff3Fogu_Ej2w9eC4KijNgm0Pj4l8wfdO1TtPsrFWg1ES0CId6P1eOACv8fXfJlADg"
-	db, err := db.NewMySQLStorage(url)
+	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
 	if err != nil {
 		log.Fatal(err)
 	}
