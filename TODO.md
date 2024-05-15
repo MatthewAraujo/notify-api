@@ -17,7 +17,7 @@ preciso adicionar os usuarios
 preciso saber quais repositorios do usuario ele esta usando meu app
 
 rota de webhooks:
-[] - rota para receber cada requisição da instalacao do APP
+[X] - rota para receber cada requisição da instalacao do APP
 
 rotas no geral:
 OAUTH E TA BOM? CRUD?: usuario

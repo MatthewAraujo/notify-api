@@ -36,6 +36,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//store installation ID for the user
+	//store repositories for the user
 }
 
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
