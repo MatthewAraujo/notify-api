@@ -21,11 +21,7 @@ rota para receber cada requisição da instalacao do APP
 
 rotas no geral:
 OAUTH E TA BOM? CRUD?: usuario
-CRUD: webhook 
-	- Criar um webhook
-	- Editar um webhook:
-		- eventos
-	- Deletar um webhook
+CRUD: webhook - Criar um webhook - Editar um webhook: - eventos - Deletar um webhook
 
 TOKEN JWT:
 nao preciso criar um sempre para cada nova pessoa ja que tem a ver com a minha chave e meu APP ID, criar uma forma de validacao pra ve se ele ainda esta valido e se passar do tempo eu crio um novo
