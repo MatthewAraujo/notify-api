@@ -40,9 +40,9 @@ type SendEmail struct {
 }
 
 type NotificationStore interface {
-	GetUserByID(id uuid.UUID) (Notifications, error)
-	GetRepositoryByUserID(id uuid.UUID, reponame string) (Notifications, error)
-	CreateNotification(notif Notifications) error
+	GetUserByID(id uuid.UUID) (*Notifications, error)
+	GetRepositoryByUserID(id uuid.UUID, reponame string) (*Notifications, error)
+	CreateNotification(notif *Notifications) error
 }
 type Notifications struct {
 	UserId   uuid.UUID `json:"user_id"`

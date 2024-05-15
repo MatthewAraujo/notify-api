@@ -20,6 +20,7 @@ tabela tipo de eventos?
 preciso colocar o instalation ID e associar com usuario
 preciso adicionar os usuarios
 preciso saber quais repositorios do usuario ele esta usando meu app
+crio um JWT salvo no bd pra saber se ainda esta ativo?
 
 rota de webhooks:
 [X] - rota para receber cada requisição da instalacao do APP - aproveitar e salvar no banco de dados todos os repositorios que ele liberou para mim

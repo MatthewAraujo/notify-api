@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MatthewAraujo/notify/cmd/service/mailer"
-	"github.com/MatthewAraujo/notify/cmd/types"
-	"github.com/MatthewAraujo/notify/cmd/utils"
+	"github.com/MatthewAraujo/notify/service/mailer"
+	"github.com/MatthewAraujo/notify/types"
+	"github.com/MatthewAraujo/notify/utils"
 	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 )
