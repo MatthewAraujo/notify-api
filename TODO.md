@@ -12,12 +12,17 @@
 [X] - Test with a real webhook
 
 criar um banco de dados, motivos:
+tabela instalation
+tabela user
+tabela repositorios
+tabela eventos
+tabela tipo de eventos?
 preciso colocar o instalation ID e associar com usuario
 preciso adicionar os usuarios
 preciso saber quais repositorios do usuario ele esta usando meu app
 
 rota de webhooks:
-[X] - rota para receber cada requisição da instalacao do APP
+[X] - rota para receber cada requisição da instalacao do APP - aproveitar e salvar no banco de dados todos os repositorios que ele liberou para mim
 
 rotas no geral:
 OAUTH E TA BOM? CRUD?: usuario
