@@ -4,21 +4,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MatthewAraujo/notify/cmd/types"
-	"github.com/MatthewAraujo/notify/cmd/utils"
+	"github.com/MatthewAraujo/notify/types"
+	"github.com/MatthewAraujo/notify/utils"
 	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 )
 
 type Handler struct {
-	// store types.NotificationStore
+	store types.NotificationStore
 }
 
-func NewHandler(
-// store types.NotificationStore
-) *Handler {
+func NewHandler(store types.NotificationStore) *Handler {
 	return &Handler{
-		// store: store
+		store: store,
 	}
 }
 

@@ -1,21 +1,26 @@
 package api
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
-	"github.com/MatthewAraujo/notify/cmd/health"
-	"github.com/MatthewAraujo/notify/cmd/service/notifications"
-	"github.com/MatthewAraujo/notify/cmd/service/webhooks"
+	"github.com/MatthewAraujo/notify/service/health"
+	"github.com/MatthewAraujo/notify/service/notifications"
+	"github.com/MatthewAraujo/notify/service/webhooks"
 	"github.com/gorilla/mux"
 )
 
 type APIServer struct {
 	addr string
+	db   *sql.DB
 }
 
-func NewAPIServer(addr string) *APIServer {
-	return &APIServer{addr: addr}
+func NewAPIServer(addr string, db *sql.DB) *APIServer {
+	return &APIServer{
+		addr: addr,
+		db:   db,
+	}
 }
 
 func (s *APIServer) Start() error {
@@ -31,7 +36,8 @@ func (s *APIServer) Start() error {
 	webhooksHandler := webhooks.NewHandler()
 	webhooksHandler.Register(subrouter)
 
-	notificationHandler := notifications.NewHandler()
+	notificationStore := notifications.NewStore(s.db)
+	notificationHandler := notifications.NewHandler(notificationStore)
 	notificationHandler.Register(subrouter)
 
 	log.Println("Starting server on", s.addr)
