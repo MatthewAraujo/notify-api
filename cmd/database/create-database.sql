@@ -3,6 +3,7 @@ CREATE TABLE User (
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    soft_deleted BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE Repository (
@@ -14,10 +15,10 @@ CREATE TABLE Repository (
 );
 
 CREATE TABLE Installation (
-    id UUID PRIMARY KEY,
+    installation_id INT PRIMARY KEY,
     user_id UUID NOT NULL,
     revoked_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
 );
 
@@ -37,10 +38,9 @@ CREATE TABLE Event (
 
 CREATE TABLE NotificationSubscription (
     id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
     repo_id UUID NOT NULL,
+    removed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY (repo_id) REFERENCES Repository(id) ON DELETE CASCADE
 );

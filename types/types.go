@@ -58,6 +58,7 @@ type User struct {
 	ID        uuid.UUID `json:"id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
+	SoftDel   bool      `json:"soft_del"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
