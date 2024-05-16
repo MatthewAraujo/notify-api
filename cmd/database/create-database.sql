@@ -44,3 +44,7 @@ CREATE TABLE NotificationSubscription (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (repo_id) REFERENCES Repository(id) ON DELETE CASCADE
 );
+
+CREATE TABLE JwtToken (
+    token VARCHAR(255) PRIMARY KEY,
+);
