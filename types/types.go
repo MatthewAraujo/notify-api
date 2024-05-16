@@ -1,6 +1,10 @@
 package types
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type InstallationWebhooks struct {
 	Installation struct {
@@ -48,4 +52,45 @@ type Notifications struct {
 	UserId   uuid.UUID `json:"user_id"`
 	RepoName string    `json:"repository_name"`
 	Events   []string  `json:"events"`
+}
+
+type User struct {
+	ID        uuid.UUID `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Repository struct {
+	ID        uuid.UUID `json:"id"`
+	RepoName  string    `json:"repo_name"`
+	UserID    uuid.UUID `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Installation struct {
+	ID        uuid.UUID  `json:"id"`
+	UserID    uuid.UUID  `json:"user_id"`
+	RevokedAt *time.Time `json:"revoked_at,omitempty"` // pointer to time.Time to allow nil values
+	CreatedAt time.Time  `json:"created_at"`
+}
+
+type EventType struct {
+	ID        uuid.UUID `json:"id"`
+	EventName string    `json:"event_name"`
+}
+
+type Event struct {
+	ID        uuid.UUID `json:"id"`
+	RepoID    uuid.UUID `json:"repo_id"`
+	EventType uuid.UUID `json:"event_type"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type NotificationSubscription struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	RepoID    uuid.UUID `json:"repo_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

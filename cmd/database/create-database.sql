@@ -1,0 +1,46 @@
+CREATE TABLE User (
+    id UUID PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Repository (
+    id UUID PRIMARY KEY,
+    repo_name VARCHAR(255) NOT NULL,
+    user_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Installation (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    revoked_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+);
+
+CREATE TABLE EventType (
+    id UUID PRIMARY KEY,
+    event_name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE Event (
+    id UUID PRIMARY KEY,
+    repo_id UUID NOT NULL,
+    event_type UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (repo_id) REFERENCES Repository(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_type) REFERENCES EventType(id) ON DELETE CASCADE
+);
+
+CREATE TABLE NotificationSubscription (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    repo_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (repo_id) REFERENCES Repository(id) ON DELETE CASCADE
+);
