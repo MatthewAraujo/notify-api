@@ -3,15 +3,22 @@ package main
 import (
 	"fmt"
 	"log"
-	"log/slog"
 
 	"github.com/MatthewAraujo/notify/cmd/api"
+	"github.com/MatthewAraujo/notify/config"
+	"github.com/MatthewAraujo/notify/db"
 )
 
 func main() {
-	serve := api.NewAPIServer(fmt.Sprintf(":%d", 8080))
-	if err := serve.Start(); err != nil {
-		log.Fatalf("error occured while starting server: %s", err)
+
+	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
+	if err != nil {
+		log.Fatal(err)
 	}
-	slog.Info("server started")
+
+	server := api.NewAPIServer(fmt.Sprintf(":%s", config.Envs.Port), db)
+	if err := server.Start(); err != nil {
+		log.Fatal(err)
+	}
+
 }

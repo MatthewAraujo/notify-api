@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
-	"os"
 
-	"github.com/MatthewAraujo/notify/cmd/types"
+	"github.com/MatthewAraujo/notify/config"
+	"github.com/MatthewAraujo/notify/types"
 	"github.com/joho/godotenv"
 )
 
@@ -21,10 +21,10 @@ func createEmailMessage(n types.SendEmail) string {
 }
 func SendMail(user types.SendEmail) {
 	godotenv.Load()
-	smtpPassword := os.Getenv("SMTP_PASSWORD")
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-	stmpAuthor := os.Getenv("SMTP_AUTHOR")
+	smtpPassword := config.Envs.SMTP.Password
+	stmpAuthor := config.Envs.SMTP.Author
+	smtpHost := config.Envs.SMTP.Host
+	smtpPort := config.Envs.SMTP.Port
 
 	auth := smtp.PlainAuth(
 		"",
