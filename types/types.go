@@ -61,6 +61,13 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type UserStore interface {
+	GetUserByID(id uuid.UUID) (*User, error)
+	CreateUser(user *User) error
+	DeleteUser(id uuid.UUID) error
+	GetUserByEmail(username string) (*User, error)
+}
+
 type Repository struct {
 	ID        uuid.UUID `json:"id"`
 	RepoName  string    `json:"repo_name"`

@@ -7,6 +7,7 @@ import (
 
 	"github.com/MatthewAraujo/notify/service/health"
 	"github.com/MatthewAraujo/notify/service/notifications"
+	"github.com/MatthewAraujo/notify/service/user"
 	"github.com/MatthewAraujo/notify/service/webhooks"
 	"github.com/gorilla/mux"
 )
@@ -33,13 +34,16 @@ func (s *APIServer) Start() error {
 	// register the handler
 	healthHandler.Register(subrouter)
 
-	webhooksHandler := webhooks.NewHandler()
-	webhooksHandler.Register(subrouter)
+	userStore := user.NewStore(s.db)
+	userHandler := user.NewHandler(userStore)
+	userHandler.Register(subrouter)
 
 	notificationStore := notifications.NewStore(s.db)
 	notificationHandler := notifications.NewHandler(notificationStore)
 	notificationHandler.Register(subrouter)
 
+	webhooksHandler := webhooks.NewHandler()
+	webhooksHandler.Register(subrouter)
 	log.Println("Starting server on", s.addr)
 
 	return http.ListenAndServe(s.addr, router)
