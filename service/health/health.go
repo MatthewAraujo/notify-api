@@ -3,7 +3,7 @@ package health
 import (
 	"net/http"
 
-	"github.com/MatthewAraujo/notify/cmd/utils"
+	"github.com/MatthewAraujo/notify/utils"
 	"github.com/gorilla/mux"
 )
 
