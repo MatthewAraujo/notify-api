@@ -15,7 +15,7 @@ banco de dados:
 []-revisar schema
 
 []-crio um JWT salvo no bd pra saber se ainda esta ativo?
-
+Criar no banco de dados uma tabela para o JWT
 rota de webhooks:
 
 rotas no geral:
