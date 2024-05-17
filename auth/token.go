@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/MatthewAraujo/notify/config"
 	"github.com/MatthewAraujo/notify/db"
+	"github.com/MatthewAraujo/notify/encrypt"
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/google/uuid"
 )
@@ -17,14 +17,20 @@ func RequestAccessToken(userId uuid.UUID, installationID string, jwtToken string
 
 	accessToken, err := GetAccessToken(userId)
 	if err != nil {
+		log.Printf("Error getting access token: %s", err)
 		if err.Error() == "access token not found" {
 			log.Printf("Access token not found in database")
-		} else {
-			if accessToken.Token != "" {
-				return accessToken.Token, nil
+		}
+	} else {
+		if accessToken != "" {
+			token, err := encrypt.DecryptToken(accessToken)
+			if err != nil {
+				return "", err
 			}
+			return token, nil
 		}
 	}
+
 	// Create HTTP client
 	client := &http.Client{}
 
@@ -55,7 +61,22 @@ func RequestAccessToken(userId uuid.UUID, installationID string, jwtToken string
 	var accessTokenResp struct {
 		Token string `json:"token"`
 	}
+
 	err = json.NewDecoder(resp.Body).Decode(&accessTokenResp)
+	if err != nil {
+		return "", err
+	}
+
+	// Insert the access token into the database
+	token, err := encrypt.EncryptToken(accessTokenResp.Token)
+	if err != nil {
+		return "", err
+	}
+
+	err = insertAccessToken(&types.AccessToken{
+		Token:  token,
+		UserId: userId,
+	})
 	if err != nil {
 		return "", err
 	}
@@ -63,41 +84,35 @@ func RequestAccessToken(userId uuid.UUID, installationID string, jwtToken string
 	return accessTokenResp.Token, nil
 }
 
-func GetAccessToken(id uuid.UUID) (*types.AccessToken, error) {
+func GetAccessToken(id uuid.UUID) (string, error) {
 	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	rows, err := db.Query("SELECT token FROM AccessToken WHERE user_id = ?", id)
+	var token string
+	err = db.QueryRow("SELECT token FROM AccessToken WHERE user_id = ?", id).Scan(&token)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	defer rows.Close()
-	at := new(types.AccessToken)
-
-	for rows.Next() {
-		at, err = scanRowIntoAccessTokenWithUserID(rows)
-		if err != nil {
-			return nil, err
-		}
+	if token == "" {
+		return "", fmt.Errorf("access token not found")
 	}
 
-	if at.Token == "" {
-		return nil, fmt.Errorf("access token not found")
-	}
-
-	return at, nil
+	return token, nil
 }
 
-func scanRowIntoAccessTokenWithUserID(rows *sql.Rows) (*types.AccessToken, error) {
-	at := new(types.AccessToken)
-	u := new(types.User)
-
-	if err := rows.Scan(&at.Token, &u.ID); err != nil {
-		return nil, err
+func insertAccessToken(at *types.AccessToken) error {
+	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
+	if err != nil {
+		return err
 	}
 
-	return at, nil
+	_, err = db.Exec("INSERT INTO AccessToken (token, user_id) VALUES (?, ?)", at.Token, at.UserId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

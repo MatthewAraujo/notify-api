@@ -19,6 +19,7 @@ import (
 
 func GenerateJWT() (string, error) {
 	token, err := getJwt()
+	tokenIsExpired := false
 	if err != nil {
 		if err.Error() == "token not found" {
 			log.Printf("Token not found, generating new token")
@@ -33,6 +34,7 @@ func GenerateJWT() (string, error) {
 				fmt.Println("Token is not expired")
 				return token.Token, nil
 			}
+			tokenIsExpired = true
 
 			log.Printf("Token is expired, generating new token")
 		}
@@ -72,7 +74,47 @@ func GenerateJWT() (string, error) {
 		return "", err
 	}
 
+	if tokenIsExpired {
+		err = UpdateJwtToken(tokenString)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		err = InsertJwtToken(tokenString)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	return tokenString, nil
+}
+
+func InsertJwtToken(token string) error {
+	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("INSERT INTO JwtToken (token) VALUES (?)", token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateJwtToken(token string) error {
+	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("UPDATE JwtToken SET token = ?", token)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getJwt() (*types.JwtToken, error) {
