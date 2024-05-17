@@ -11,8 +11,6 @@
 [X] - Create a webhooks for others users
 [X] - Test with a real webhook
 
-trocar o nome da coluna repo_name da Tabela Repository
-
 Atualizar a rota de criar webhook para aceitar um array de objeto com repositorio e suas açoes
 
 Dentro da rota de installation verificar o payload para saber se é "created" ou "added"

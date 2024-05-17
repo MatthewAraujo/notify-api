@@ -69,7 +69,7 @@ func GenerateJWT() (string, error) {
 	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodRS256, payload).SignedString(privateKey)
 
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	return tokenString, nil
