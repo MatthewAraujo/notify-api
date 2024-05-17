@@ -11,10 +11,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Handler struct{}
+type Handler struct {
+	store types.InstallationStore
+}
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(store types.InstallationStore) *Handler {
+	return &Handler{
+		store: store,
+	}
 }
 
 func (h *Handler) Register(mux *mux.Router) {
@@ -35,8 +39,27 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//store installation ID for the user
+	userId, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	installationId := payload.Installation.Id
+
+	if err := h.store.CreateInstallation(userId, installationId); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 	//store repositories for the user
+	for _, repo := range payload.Repositories {
+		if err := h.store.CreateRepository(userId, repo.Name); err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Installation created for %s", payload.Installation.Account.Login))
 }
 
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {

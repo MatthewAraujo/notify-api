@@ -83,6 +83,12 @@ type Installation struct {
 	CreatedAt time.Time  `json:"created_at"`
 }
 
+type InstallationStore interface {
+	GetUserIdByUsername(username string) (uuid.UUID, error)
+	CreateInstallation(userId uuid.UUID, installationId int) error
+	CreateRepository(userId uuid.UUID, repoName string) error
+}
+
 type EventType struct {
 	ID        uuid.UUID `json:"id"`
 	EventName string    `json:"event_name"`

@@ -12,6 +12,10 @@
 [X] - Test with a real webhook
 
 Criar rota para pegar os installation junto com os repositorios
+Dentro da rota de installation verificar o payload para saber se é "created" ou "added"
+quando for created cria um installation ID
+quando for added adiciona novos repositorios
+
 Atualizar a rota de criar webhook para aceitar um array de objeto com repositorio e suas açoes
 
 AUTH

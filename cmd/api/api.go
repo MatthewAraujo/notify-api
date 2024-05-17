@@ -42,7 +42,8 @@ func (s *APIServer) Start() error {
 	notificationHandler := notifications.NewHandler(notificationStore)
 	notificationHandler.Register(subrouter)
 
-	webhooksHandler := webhooks.NewHandler()
+	webhooksStore := webhooks.NewStore(s.db)
+	webhooksHandler := webhooks.NewHandler(webhooksStore)
 	webhooksHandler.Register(subrouter)
 	log.Println("Starting server on", s.addr)
 
