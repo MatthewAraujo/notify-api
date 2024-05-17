@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/MatthewAraujo/notify/config"
 	"github.com/MatthewAraujo/notify/db"
-	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
 	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
@@ -23,21 +23,20 @@ func GenerateJWT() (string, error) {
 	if err != nil {
 		if err.Error() == "token not found" {
 			log.Printf("Token not found, generating new token")
-		} else {
-			isExpired, err := IsTokenExpired(token.Token)
-
-			if err != nil {
-				return "", err
-			}
-
-			if !isExpired {
-				fmt.Println("Token is not expired")
-				return token.Token, nil
-			}
-			tokenIsExpired = true
-
-			log.Printf("Token is expired, generating new token")
 		}
+	} else {
+
+		tokenIsExpired, err = isJwtExpired(token)
+		if err != nil {
+			return "", err
+		}
+
+		if !tokenIsExpired {
+			log.Printf("Token is not expired")
+			return token, nil
+		}
+
+		log.Printf("Token is expired, generating new token")
 	}
 
 	godotenv.Load()
@@ -117,56 +116,67 @@ func UpdateJwtToken(token string) error {
 	return nil
 }
 
-func getJwt() (*types.JwtToken, error) {
+func getJwt() (string, error) {
 	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	rows, err := db.Query("SELECT * from JwtToken")
+	var token string
+	err = db.QueryRow("SELECT token FROM JwtToken").Scan(&token)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	token := new(types.JwtToken)
-
-	for rows.Next() {
-		token, err = scanRowIntoJwtToken(rows)
-		if err != nil {
-			return nil, err
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("token not found")
 		}
+		return "", err
 	}
 
-	if token.Token == "" {
-		return nil, fmt.Errorf("token not found")
+	if token == "" {
+		log.Printf("Token not found")
+		return "", fmt.Errorf("token not found")
 	}
+
+	log.Printf("Token found in database")
 
 	return token, nil
 }
 
-func IsTokenExpired(tokenString string) (bool, error) {
+func isJwtExpired(tokenString string) (bool, error) {
+	keyPath := "key.pem"
+	// Carrega a chave pública do arquivo PEM
+	keyData, err := utils.ReadFile(keyPath)
+	if err != nil {
+		return false, fmt.Errorf("erro ao ler o arquivo de chave: %v", err)
+	}
+
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(keyData)
+	if err != nil {
+		return false, fmt.Errorf("erro ao analisar a chave pública: %v", err)
+	}
+
+	// Análise e verificação do token JWT
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return nil, nil
+		// Verifique se o método de assinatura é RSA
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("método de assinatura inesperado: %v", token.Header["alg"])
+		}
+		return publicKey, nil
 	})
 
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("erro ao analisar o token JWT: %v", err)
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return false, fmt.Errorf("invalid token")
+	// Verifica se o token é válido
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// Verifica a expiração
+		if exp, ok := claims["exp"].(float64); ok {
+			expirationTime := time.Unix(int64(exp), 0)
+			return expirationTime.Before(time.Now()), nil
+		} else {
+			return false, errors.New("o campo 'exp' não está presente no token")
+		}
+	} else {
+		return false, errors.New("token JWT inválido")
 	}
-
-	expirationTime := time.Unix(int64(claims["exp"].(float64)), 0)
-	return time.Now().After(expirationTime), nil
-}
-
-func scanRowIntoJwtToken(rows *sql.Rows) (*types.JwtToken, error) {
-	var token types.JwtToken
-	if err := rows.Scan(&token.Token); err != nil {
-		return nil, err
-	}
-	return &token, nil
 }

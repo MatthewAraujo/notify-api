@@ -49,6 +49,7 @@ type NotificationStore interface {
 	GetEventTypeByName(eventType string) (uuid.UUID, error)
 	GetRepoIDByName(repoName string) (uuid.UUID, error)
 	CreateEvent(event *Event) error
+	GetInstallationIDByUser(userId uuid.UUID) (int, error)
 }
 type Notifications struct {
 	UserId uuid.UUID `json:"user_id"`
