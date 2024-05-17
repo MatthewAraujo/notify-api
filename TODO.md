@@ -13,7 +13,7 @@
 
 Como ver se o JWT esta expirado?
 
-request: bad credentials resolve quando chegar em casa
+checar duplicidade de tudo!!
 
 Dentro da rota de installation verificar o payload para saber se é "created" ou "added"
 quando for created cria um installation ID
