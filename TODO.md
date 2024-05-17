@@ -11,7 +11,7 @@
 [X] - Create a webhooks for others users
 [X] - Test with a real webhook
 
-jwt criando varios
+Como ver se o JWT esta expirado?
 
 request: bad credentials resolve quando chegar em casa
 
