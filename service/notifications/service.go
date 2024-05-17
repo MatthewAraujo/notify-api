@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/auth"
@@ -13,7 +12,6 @@ import (
 )
 
 func CreateWebhook(installationId int, username string, userId uuid.UUID, reponame string, events []string) error {
-	log.Printf("Creating webhook for %s\n", reponame)
 
 	godotenv.Load()
 	token, err := generateAccessToken(installationId, userId)
@@ -42,14 +40,13 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 		return err
 	}
 
-	log.Printf("Sending payload to GitHub: ")
 	err = sendPayloadToGitHub(url, token, payloadBytes)
 	if err != nil {
 		return err
 
 	}
 
-	return err
+	return nil
 }
 
 // generate access token
@@ -58,14 +55,11 @@ func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("Generated JWT: %s\n", jwt)
 
 	accessToken, err := auth.RequestAccessToken(userId, installationId, jwt)
 	if err != nil {
 		return "", err
 	}
-
-	log.Printf("Access token: %s\n", accessToken)
 
 	return accessToken, nil
 }
