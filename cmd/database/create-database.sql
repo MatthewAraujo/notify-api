@@ -8,7 +8,7 @@ CREATE TABLE User (
 
 CREATE TABLE Repository (
     id TEXT PRIMARY KEY,
-    repo_name VARCHAR(255) NOT NULL,
+    epo_name VARCHAR(255) NOT NULL,
     user_id TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
