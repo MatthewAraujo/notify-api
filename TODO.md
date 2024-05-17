@@ -15,7 +15,7 @@ Atualizar a rota de criar webhook para aceitar um array de objeto com repositori
 
 Dentro da rota de installation verificar o payload para saber se é "created" ou "added"
 quando for created cria um installation ID
-quando for added adiciona novCriar rota para pegar os installation junto com os repositorios
+quando for added adiciona novo repositorios
 
 AUTH
 Fazer a logica de guardar o Jwt ENCRYPTADO? no banco de dados
