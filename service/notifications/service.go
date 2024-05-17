@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/MatthewAraujo/notify/jwt"
+	"github.com/MatthewAraujo/notify/auth"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
-func CreateWebhook(username string, reponame string, events []string) error {
+func CreateWebhook(username string, userId uuid.UUID, reponame string, events []string) error {
 
 	godotenv.Load()
-	token, err := generateAccessToken()
+	token, err := generateAccessToken(userId)
 	if err != nil {
 		return err
 	}
@@ -49,60 +50,21 @@ func CreateWebhook(username string, reponame string, events []string) error {
 }
 
 // generate access token
-func generateAccessToken() (string, error) {
-	jwt, err := jwt.GenerateJWT()
+func generateAccessToken(userId uuid.UUID) (string, error) {
+	jwt, err := auth.GenerateJWT()
 	if err != nil {
 		return "", err
 	}
 
 	// how i will get this????
 	// i wuill get this from the database
-	installationID := "50730929"
-	accessToken, err := getInstallationAccessToken(installationID, jwt)
+	installationID := "50690203"
+	accessToken, err := auth.RequestAccessToken(userId, installationID, jwt)
 	if err != nil {
 		return "", err
 	}
 
 	return accessToken, nil
-}
-
-func getInstallationAccessToken(installationID, jwtToken string) (string, error) {
-	// Create HTTP client
-	client := &http.Client{}
-
-	// Create request
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/app/installations/%s/access_tokens", installationID), nil)
-	if err != nil {
-		return "", err
-	}
-
-	// Add headers
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwtToken))
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-
-	// Send request
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Check response status
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("unexpected response status: %s", resp.Status)
-	}
-
-	// Parse the response
-	var accessTokenResp struct {
-		Token string `json:"token"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&accessTokenResp)
-	if err != nil {
-		return "", err
-	}
-
-	return accessTokenResp.Token, nil
 }
 
 func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {

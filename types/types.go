@@ -106,3 +106,8 @@ type NotificationSubscription struct {
 type JwtToken struct {
 	Token string `json:"token"`
 }
+
+type AccessToken struct {
+	Token  string    `json:"token"`
+	UserId uuid.UUID `json:"user_id"`
+}

@@ -1,44 +1,44 @@
 CREATE TABLE User (
-    id UUID PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     soft_deleted BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE Repository (
-    id UUID PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     repo_name VARCHAR(255) NOT NULL,
-    user_id UUID NOT NULL,
+    user_id TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Installation (
-    installation_id INT PRIMARY KEY,
-    user_id UUID NOT NULL,
+    installation_id INTEGER PRIMARY KEY,
+    user_id TEXT NOT NULL,
     revoked_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
 );
 
 CREATE TABLE EventType (
-    id UUID PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     event_name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE Event (
-    id UUID PRIMARY KEY,
-    repo_id UUID NOT NULL,
-    event_type UUID NOT NULL,
+    id TEXT PRIMARY KEY,
+    repo_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (repo_id) REFERENCES Repository(id) ON DELETE CASCADE,
     FOREIGN KEY (event_type) REFERENCES EventType(id) ON DELETE CASCADE
 );
 
 CREATE TABLE NotificationSubscription (
-    id UUID PRIMARY KEY,
-    repo_id UUID NOT NULL,
+    id TEXT PRIMARY KEY,
+    repo_id TEXT NOT NULL,
     removed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -46,5 +46,12 @@ CREATE TABLE NotificationSubscription (
 );
 
 CREATE TABLE JwtToken (
+    token VARCHAR(255) PRIMARY KEY
+);
+
+CREATE TABLE AccessToken (
     token VARCHAR(255) PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
 );

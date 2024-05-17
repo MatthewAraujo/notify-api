@@ -1,13 +1,16 @@
-package jwt
+package auth
 
 import (
 	"crypto/x509"
 	"database/sql"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
+	"github.com/MatthewAraujo/notify/config"
+	"github.com/MatthewAraujo/notify/db"
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
 	"github.com/golang-jwt/jwt"
@@ -15,19 +18,24 @@ import (
 )
 
 func GenerateJWT() (string, error) {
-	token, err := getToken()
+	token, err := getJwt()
 	if err != nil {
-		return "", err
-	}
+		if err.Error() == "token not found" {
+			log.Printf("Token not found, generating new token")
+		} else {
+			isExpired, err := IsTokenExpired(token.Token)
 
-	isExpired, err := IsTokenExpired(token.Token)
+			if err != nil {
+				return "", err
+			}
 
-	if err != nil {
-		return "", err
-	}
+			if !isExpired {
+				fmt.Println("Token is not expired")
+				return token.Token, nil
+			}
 
-	if !isExpired {
-		return token.Token, nil
+			log.Printf("Token is expired, generating new token")
+		}
 	}
 
 	godotenv.Load()
@@ -67,8 +75,12 @@ func GenerateJWT() (string, error) {
 	return tokenString, nil
 }
 
-func getToken() (*types.JwtToken, error) {
-	db := sql.DB{}
+func getJwt() (*types.JwtToken, error) {
+	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := db.Query("SELECT * from JwtToken")
 	if err != nil {
 		return nil, err

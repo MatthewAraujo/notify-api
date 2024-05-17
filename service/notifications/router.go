@@ -7,6 +7,7 @@ import (
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
 	"github.com/go-playground/validator"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -36,9 +37,15 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
 		return
 	}
-	username := "vtrdiego"
+	username := "MatthewAraujo"
+	uuidStr := "5281c474-98b3-454a-b558-c2dbd53779e0"
+	userId, err := uuid.Parse(uuidStr)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-	err := CreateWebhook(username, payload.RepoName, payload.Events)
+	err = CreateWebhook(username, userId, payload.RepoName, payload.Events)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
