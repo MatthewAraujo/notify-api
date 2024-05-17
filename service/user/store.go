@@ -74,7 +74,7 @@ func (s *Store) GetUserByID(id uuid.UUID) (*types.User, error) {
 	return u, nil
 }
 func (s *Store) DeleteUser(id uuid.UUID) error {
-	_, err := s.db.Exec("UPDATE user SET deleted_at = $1 WHERE id = $2", time.Now(), id)
+	_, err := s.db.Exec("UPDATE user SET deleted_at = false WHERE id = $2", time.Now(), id)
 	if err != nil {
 		return err
 	}

@@ -11,25 +11,23 @@
 [X] - Create a webhooks for others users
 [X] - Test with a real webhook
 
-banco de dados:
-[]-revisar schema
+Criar rota para pegar os installation junto com os repositorios
+Atualizar a rota de criar webhook para aceitar um array de objeto com repositorio e suas açoes
 
-[]-crio um JWT salvo no bd pra saber se ainda esta ativo?
-Criar no banco de dados uma tabela para o JWT
-rota de webhooks:
-
-[]-salvar o access token do usuario no banco para que eu nao precise
-criar varios tokens
-- ver se o acess token fica diferente a cada repositorio novo que o usuario
+AUTH
+Fazer a logica de guardar o Jwt ENCRYPTADO? no banco de dados
+Fazer a logica de guardar o Access Token ENCRYPTADO nmo banco de dados
+-ver se o acess token fica diferente a cada repositorio novo que o usuario
 me da acesso
 
-rotas no geral:
-OAUTH E TA BOM? CRUD?: usuario
+rota de webhooks:
 CRUD: webhook - Criar um webhook - Editar um webhook: - eventos - Deletar um webhook
 [] - Usuario pode adicionar novos repositorios do github
+json escrito: "added"
 
-TOKEN JWT:
-nao preciso criar um sempre para cada nova pessoa ja que tem a ver com a minha chave e meu APP ID, criar uma forma de validacao pra ve se ele ainda esta valido e se passar do tempo eu crio um novo
+USER
+Fazer logica de deletar usuario
+Fazer a logica de criar usuario com OAUTH - ver video do mewjke https://youtu.be/iHFQyd__2A0?si=pW82GF-D9WYu34vK
 
 para o front
 rota para pegar todos o eventos
