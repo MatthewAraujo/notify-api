@@ -3,7 +3,10 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"io"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -35,4 +38,20 @@ func PayloadToJSON(payload any) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func ReadFile(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// Read from the provided reader
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

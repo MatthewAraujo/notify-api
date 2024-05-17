@@ -58,7 +58,15 @@ type User struct {
 	ID        uuid.UUID `json:"id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
+	SoftDel   bool      `json:"soft_del"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type UserStore interface {
+	GetUserByID(id uuid.UUID) (*User, error)
+	CreateUser(user *User) error
+	DeleteUser(id uuid.UUID) error
+	GetUserByEmail(username string) (*User, error)
 }
 
 type Repository struct {
@@ -93,4 +101,13 @@ type NotificationSubscription struct {
 	RepoID    uuid.UUID `json:"repo_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type JwtToken struct {
+	Token string `json:"token"`
+}
+
+type AccessToken struct {
+	Token  string    `json:"token"`
+	UserId uuid.UUID `json:"user_id"`
 }

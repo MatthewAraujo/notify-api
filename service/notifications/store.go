@@ -17,11 +17,6 @@ func NewStore(db *sql.DB) *Store {
 	}
 }
 
-type User struct {
-	ID   int
-	Name string
-}
-
 func (s *Store) CreateNotification(notif *types.Notifications) error {
 	return nil
 }
@@ -34,9 +29,9 @@ func (s *Store) GetUserByID(id uuid.UUID) (*types.Notifications, error) {
 	return nil, nil
 }
 
-func (s *Store) scanRowIntoUser(rows *sql.Rows) (*User, error) {
-	var user User
-	if err := rows.Scan(&user.ID, &user.Name); err != nil {
+func (s *Store) scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
+	var user types.User
+	if err := rows.Scan(&user.ID, &user.Username); err != nil {
 		return nil, err
 	}
 	return &user, nil
