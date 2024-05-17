@@ -11,16 +11,11 @@
 [X] - Create a webhooks for others users
 [X] - Test with a real webhook
 
-Atualizar a rota de criar webhook para aceitar um array de objeto com repositorio e suas açoes
-
 Dentro da rota de installation verificar o payload para saber se é "created" ou "added"
 quando for created cria um installation ID
 quando for added adiciona novo repositorios
 
 AUTH
-Fazer a logica de guardar o Jwt ENCRYPTADO? no banco de dados
-Fazer a logica de guardar o Access Token ENCRYPTADO nmo banco de dados
-Ver como melhorar a "passagem" do DB para verificar
 -ver se o acess token fica diferente a cada repositorio novo que o usuario
 me da acesso
 
