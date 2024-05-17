@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func RequestAccessToken(userId uuid.UUID, installationID string, jwtToken string) (string, error) {
+func RequestAccessToken(userId uuid.UUID, installationID int, jwtToken string) (string, error) {
 
 	accessToken, err := GetAccessToken(userId)
 	if err != nil {
@@ -35,7 +35,7 @@ func RequestAccessToken(userId uuid.UUID, installationID string, jwtToken string
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/app/installations/%s/access_tokens", installationID), nil)
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationID), nil)
 	if err != nil {
 		return "", err
 	}
@@ -99,6 +99,8 @@ func GetAccessToken(id uuid.UUID) (string, error) {
 	if token == "" {
 		return "", fmt.Errorf("access token not found")
 	}
+
+	log.Printf("Access token found in database")
 
 	return token, nil
 }

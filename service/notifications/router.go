@@ -48,8 +48,14 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	installationId, err := h.store.GetInstallationIDByUser(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	for _, repo := range payload.Repos {
-		err := CreateWebhook(user.Username, user.ID, repo.RepoName, repo.Events)
+		err := CreateWebhook(installationId, user.Username, user.ID, repo.RepoName, repo.Events)
 
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)

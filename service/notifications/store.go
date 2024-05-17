@@ -68,6 +68,16 @@ func (s *Store) GetEventTypeByName(name string) (uuid.UUID, error) {
 	return id, nil
 }
 
+func (s *Store) GetInstallationIDByUser(id uuid.UUID) (int, error) {
+	var installationID int
+	err := s.db.QueryRow("SELECT installation_id FROM installation WHERE user_id = ?", id).Scan(&installationID)
+	if err != nil {
+		return 0, err
+	}
+
+	return installationID, nil
+}
+
 func (s *Store) GetRepoIDByName(name string) (uuid.UUID, error) {
 	var id uuid.UUID
 	err := s.db.QueryRow("SELECT id FROM repository WHERE repo_name = ?", name).Scan(&id)

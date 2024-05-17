@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/auth"
@@ -11,10 +12,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func CreateWebhook(username string, userId uuid.UUID, reponame string, events []string) error {
+func CreateWebhook(installationId int, username string, userId uuid.UUID, reponame string, events []string) error {
+	log.Printf("Creating webhook for %s\n", reponame)
 
 	godotenv.Load()
-	token, err := generateAccessToken(userId)
+	token, err := generateAccessToken(installationId, userId)
 	if err != nil {
 		return err
 	}
@@ -40,6 +42,7 @@ func CreateWebhook(username string, userId uuid.UUID, reponame string, events []
 		return err
 	}
 
+	log.Printf("Sending payload to GitHub: ")
 	err = sendPayloadToGitHub(url, token, payloadBytes)
 	if err != nil {
 		return err
@@ -50,25 +53,28 @@ func CreateWebhook(username string, userId uuid.UUID, reponame string, events []
 }
 
 // generate access token
-func generateAccessToken(userId uuid.UUID) (string, error) {
+func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
 	jwt, err := auth.GenerateJWT()
 	if err != nil {
 		return "", err
 	}
+	log.Printf("Generated JWT: %s\n", jwt)
 
-	// how i will get this????
-	// i wuill get this from the database
-	installationID := "50690203"
-	accessToken, err := auth.RequestAccessToken(userId, installationID, jwt)
+	accessToken, err := auth.RequestAccessToken(userId, installationId, jwt)
 	if err != nil {
 		return "", err
 	}
+
+	log.Printf("Access token: %s\n", accessToken)
 
 	return accessToken, nil
 }
 
 func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
+
 	client := &http.Client{}
+
+	//prinft payload
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payloadBytes))
 	if err != nil {
