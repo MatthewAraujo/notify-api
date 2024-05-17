@@ -18,6 +18,11 @@ banco de dados:
 Criar no banco de dados uma tabela para o JWT
 rota de webhooks:
 
+[]-salvar o access token do usuario no banco para que eu nao precise
+criar varios tokens
+- ver se o acess token fica diferente a cada repositorio novo que o usuario
+me da acesso
+
 rotas no geral:
 OAUTH E TA BOM? CRUD?: usuario
 CRUD: webhook - Criar um webhook - Editar um webhook: - eventos - Deletar um webhook
