@@ -44,6 +44,8 @@ type SendEmail struct {
 }
 
 type NotificationStore interface {
+	CheckIfRepoExists(repoName string) (bool, error)
+	CheckIfNotificationExists(userId uuid.UUID, repoId uuid.UUID) (bool, error)
 	GetUserByID(id uuid.UUID) (*User, error)
 	CreateNotification(notif *NotificationSubscription) error
 	GetEventTypeByName(eventType string) (uuid.UUID, error)
@@ -92,6 +94,8 @@ type InstallationStore interface {
 	GetUserIdByUsername(username string) (uuid.UUID, error)
 	CreateInstallation(userId uuid.UUID, installationId int) error
 	CreateRepository(userId uuid.UUID, repoName string) error
+	CheckIfRepoExists(repoName string) (bool, error)
+	CheckIfInstallationExists(userId uuid.UUID) (bool, error)
 }
 
 type EventType struct {

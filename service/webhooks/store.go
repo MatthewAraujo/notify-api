@@ -35,6 +35,24 @@ func (s *Store) CreateInstallation(userId uuid.UUID, installationId int) error {
 	return nil
 }
 
+func (s *Store) CheckIfRepoExists(repoName string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM Repository WHERE repo_name = ?)", repoName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *Store) CheckIfInstallationExists(userId uuid.UUID) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM Installation WHERE user_id = ?)", userId).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
 func (s *Store) CreateRepository(userId uuid.UUID, repoName string) error {
 	_, err := s.db.Exec("INSERT INTO Repository (id,user_id, repo_name) VALUES (?,?, ?)", uuid.New(), userId, repoName)
 	if err != nil {

@@ -3,7 +3,6 @@ package notifications
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/google/uuid"
@@ -85,8 +84,25 @@ func (s *Store) GetRepoIDByName(name string) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("repo not found")
 	}
 
-	log.Printf("Repo ID: %s", id)
 	return id, nil
+}
+
+func (s *Store) CheckIfNotificationExists(userID uuid.UUID, repoID uuid.UUID) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM NotificationSubscription WHERE repo_id = ?)", repoID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *Store) CheckIfRepoExists(name string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM repository WHERE repo_name = ?)", name).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 func (s *Store) scanRowIntoUser(rows *sql.Rows) (*types.User, error) {

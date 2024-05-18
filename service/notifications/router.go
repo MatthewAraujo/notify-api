@@ -55,13 +55,17 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, repo := range payload.Repos {
-		err := CreateWebhook(installationId, user.Username, user.ID, repo.RepoName, repo.Events)
-
+		// check if the repo already exists
+		exists, err := h.store.CheckIfRepoExists(repo.RepoName)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
+		if !exists {
+			utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
+			return
+		}
 		repoId, err := h.store.GetRepoIDByName(repo.RepoName)
 		if err != nil {
 			if err.Error() == "repo not found" {
@@ -69,6 +73,24 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			utils.WriteError(w, http.StatusInternalServerError, err)
+		}
+		// check if the notification already exists
+		exists, err = h.store.CheckIfNotificationExists(user.ID, repoId)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if exists {
+			utils.WriteError(w, http.StatusConflict, fmt.Errorf("notification already exists"))
+			return
+		}
+
+		err = CreateWebhook(installationId, user.Username, user.ID, repo.RepoName, repo.Events)
+
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
 		}
 
 		for _, event := range repo.Events {
