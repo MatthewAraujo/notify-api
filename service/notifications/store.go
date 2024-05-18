@@ -87,7 +87,16 @@ func (s *Store) GetRepoIDByName(name string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func (s *Store) CheckIfNotificationExists(userID uuid.UUID, repoID uuid.UUID) (bool, error) {
+func (s *Store) CheckIfNotificationExists(id uuid.UUID) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM NotificationSubscription WHERE id = ?)", id).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *Store) CheckIfNotificationExistsForUserId(userID uuid.UUID, repoID uuid.UUID) (bool, error) {
 	var exists bool
 	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM NotificationSubscription WHERE repo_id = ?)", repoID).Scan(&exists)
 	if err != nil {
@@ -99,6 +108,42 @@ func (s *Store) CheckIfNotificationExists(userID uuid.UUID, repoID uuid.UUID) (b
 func (s *Store) CheckIfRepoExists(name string) (bool, error) {
 	var exists bool
 	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM repository WHERE repo_name = ?)", name).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *Store) DeleteEventForRepo(repoID uuid.UUID) error {
+	_, err := s.db.Exec("DELETE FROM event WHERE repo_id = ?", repoID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Store) CheckIfEventTypeExistsByName(name string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM EventType WHERE event_name = ?)", name).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *Store) CheckIfRepoHasEventById(repoID uuid.UUID, eventName uuid.UUID) (bool, error) {
+	var exists bool
+
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM event WHERE repo_id = ? AND event_type = ?)", repoID, eventName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *Store) CheckIfUserOwnsRepo(userID uuid.UUID, repoID uuid.UUID) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM repository WHERE user_id = ? AND id = ?)", userID, repoID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
