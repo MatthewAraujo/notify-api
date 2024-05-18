@@ -44,12 +44,30 @@ type SendEmail struct {
 }
 
 type NotificationStore interface {
-	GetUserByID(id uuid.UUID) (*User, error)
+	// Notification
+	CheckIfNotificationExists(id uuid.UUID) (bool, error)
+	CheckIfNotificationExistsForUserId(userId uuid.UUID, repoId uuid.UUID) (bool, error)
 	CreateNotification(notif *NotificationSubscription) error
-	GetEventTypeByName(eventType string) (uuid.UUID, error)
+	GetOwnerOfNotification(id uuid.UUID) (uuid.UUID, error)
+	DeleteNotification(id uuid.UUID) error
+
+	//User
+	CheckIfUserOwnsRepo(userId uuid.UUID, repoId uuid.UUID) (bool, error)
+	GetUserByID(id uuid.UUID) (*User, error)
+
+	//Repository
 	GetRepoIDByName(repoName string) (uuid.UUID, error)
-	CreateEvent(event *Event) error
+	CheckIfRepoExists(repoName string) (bool, error)
+	CheckIfRepoHasEventById(repoId uuid.UUID, eventTypeName uuid.UUID) (bool, error)
+
+	//Installation
 	GetInstallationIDByUser(userId uuid.UUID) (int, error)
+
+	//Event
+	CheckIfEventTypeExistsByName(eventType string) (bool, error)
+	GetEventTypeByName(eventType string) (uuid.UUID, error)
+	CreateEvent(event *Event) error
+	DeleteEventForRepo(repoId uuid.UUID) error
 }
 type Notifications struct {
 	UserId uuid.UUID `json:"user_id"`
@@ -92,6 +110,8 @@ type InstallationStore interface {
 	GetUserIdByUsername(username string) (uuid.UUID, error)
 	CreateInstallation(userId uuid.UUID, installationId int) error
 	CreateRepository(userId uuid.UUID, repoName string) error
+	CheckIfRepoExists(repoName string) (bool, error)
+	CheckIfInstallationExists(userId uuid.UUID) (bool, error)
 }
 
 type EventType struct {
@@ -121,4 +141,13 @@ type JwtToken struct {
 type AccessToken struct {
 	Token  string    `json:"token"`
 	UserId uuid.UUID `json:"user_id"`
+}
+
+type EditNotification struct {
+	RepoName string `json:"repo_name"`
+	Events   struct {
+		Added  []string `json:"added"`
+		Remove []string `json:"remove"`
+	} `json:"events"`
+	UserID uuid.UUID `json:"user_id"`
 }

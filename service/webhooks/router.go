@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/service/mailer"
@@ -47,14 +48,36 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 
 	installationId := payload.Installation.Id
 
+	//Check if the installation already exists
+	exists, err := h.store.CheckIfInstallationExists(userId)
+	if err != nil {
+		return
+	}
+
+	if exists {
+		log.Printf("Installation already exists for %s", payload.Installation.Account.Login)
+		return
+	}
+
 	if err := h.store.CreateInstallation(userId, installationId); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 	//store repositories for the user
 	for _, repo := range payload.Repositories {
+		//Check if the repo already exists
+		exists, err := h.store.CheckIfRepoExists(repo.Name)
+		if err != nil {
+			return
+		}
+
+		if exists {
+			log.Printf("Repository already exists for %s", repo.Name)
+			return
+		}
+
 		if err := h.store.CreateRepository(userId, repo.Name); err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Printf("Error creating repository for %s", repo.Name)
 			return
 		}
 	}
