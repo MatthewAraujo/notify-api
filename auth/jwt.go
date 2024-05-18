@@ -60,6 +60,9 @@ func GenerateJWT() (string, error) {
 	}
 
 	err = InsertJwtToken(tokenString)
+	if err != nil {
+		return "", err
+	}
 
 	return tokenString, nil
 }
