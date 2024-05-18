@@ -24,6 +24,52 @@ func NewHandler(store types.NotificationStore) *Handler {
 func (h *Handler) Register(router *mux.Router) {
 	router.HandleFunc("/notification", h.CreateNotification).Methods(http.MethodPost)
 	router.HandleFunc("/notification/{id}", h.EditNotification).Methods(http.MethodPut)
+	router.HandleFunc("/notification/{id}", h.DeleteNotification).Methods(http.MethodDelete)
+}
+
+func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	str, ok := vars["id"]
+	if !ok {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing id"))
+		return
+	}
+
+	id, err := uuid.Parse(str)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid id"))
+		return
+	}
+
+	exists, err := h.store.CheckIfNotificationExists(id)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if !exists {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("notification not found"))
+		return
+	}
+
+	owner, err := h.store.GetOwnerOfNotification(id)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if owner == uuid.Nil {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("you do not own this notification"))
+		return
+	}
+
+	if err := h.store.DeleteNotification(id); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, "Notification deleted")
+
 }
 
 func (h *Handler) EditNotification(w http.ResponseWriter, r *http.Request) {

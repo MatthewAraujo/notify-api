@@ -48,6 +48,8 @@ type NotificationStore interface {
 	CheckIfNotificationExists(id uuid.UUID) (bool, error)
 	CheckIfNotificationExistsForUserId(userId uuid.UUID, repoId uuid.UUID) (bool, error)
 	CreateNotification(notif *NotificationSubscription) error
+	GetOwnerOfNotification(id uuid.UUID) (uuid.UUID, error)
+	DeleteNotification(id uuid.UUID) error
 
 	//User
 	CheckIfUserOwnsRepo(userId uuid.UUID, repoId uuid.UUID) (bool, error)
