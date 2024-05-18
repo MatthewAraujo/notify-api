@@ -1,16 +1,3 @@
-[] - notify
-[X] - Get what i want from the json
-[X] - Send a email
-[] - Create a database Schema
-[] - Create User
-[] - What to notify
-[X] - A way to choose what i want the repo notify
-[X] - Create a webhooks using github
-[X] - Using a exist github token KEY
-[X] - Creating a new github token KEY
-[X] - Create a webhooks for others users
-[X] - Test with a real webhook
-
 Como ver se o JWT esta expirado?
 
 checar duplicidade de tudo!!
@@ -18,10 +5,6 @@ checar duplicidade de tudo!!
 Dentro da rota de installation verificar o payload para saber se é "created" ou "added"
 quando for created cria um installation ID
 quando for added adiciona novo repositorios
-
-AUTH
--ver se o acess token fica diferente a cada repositorio novo que o usuario
-me da acesso
 
 rota de webhooks:
 CRUD: webhook - Criar um webhook - Editar um webhook: - eventos - Deletar um webhook
