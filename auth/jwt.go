@@ -11,7 +11,6 @@ import (
 
 	"github.com/MatthewAraujo/notify/config"
 	"github.com/MatthewAraujo/notify/db"
-	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
 	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
@@ -22,22 +21,10 @@ func GenerateJWT() (string, error) {
 	if err != nil {
 		if err.Error() == "token not found" {
 			log.Printf("Token not found, generating new token")
-		} else {
-			isExpired, err := IsTokenExpired(token.Token)
-
-			if err != nil {
-				return "", err
-			}
-
-			if !isExpired {
-				fmt.Println("Token is not expired")
-				return token.Token, nil
-			}
-
-			log.Printf("Token is expired, generating new token")
 		}
+	} else {
+		return token, nil
 	}
-
 	godotenv.Load()
 
 	app_id := os.Getenv("APP_ID")
@@ -69,62 +56,49 @@ func GenerateJWT() (string, error) {
 	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodRS256, payload).SignedString(privateKey)
 
 	if err != nil {
-		panic(err)
+		return "", err
 	}
+
+	err = InsertJwtToken(tokenString)
 
 	return tokenString, nil
 }
 
-func getJwt() (*types.JwtToken, error) {
+func InsertJwtToken(token string) error {
 	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	rows, err := db.Query("SELECT * from JwtToken")
+	_, err = db.Exec("INSERT INTO JwtToken (token) VALUES (?)", token)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer rows.Close()
 
-	token := new(types.JwtToken)
+	return nil
+}
 
-	for rows.Next() {
-		token, err = scanRowIntoJwtToken(rows)
-		if err != nil {
-			return nil, err
+func getJwt() (string, error) {
+	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
+	if err != nil {
+		return "", err
+	}
+
+	var token string
+	err = db.QueryRow("SELECT token FROM JwtToken").Scan(&token)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("token not found")
 		}
+		return "", err
 	}
 
-	if token.Token == "" {
-		return nil, fmt.Errorf("token not found")
+	if token == "" {
+		log.Printf("Token not found")
+		return "", fmt.Errorf("token not found")
 	}
+
+	log.Printf("Token found in database")
 
 	return token, nil
-}
-
-func IsTokenExpired(tokenString string) (bool, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return nil, nil
-	})
-
-	if err != nil {
-		return false, err
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return false, fmt.Errorf("invalid token")
-	}
-
-	expirationTime := time.Unix(int64(claims["exp"].(float64)), 0)
-	return time.Now().After(expirationTime), nil
-}
-
-func scanRowIntoJwtToken(rows *sql.Rows) (*types.JwtToken, error) {
-	var token types.JwtToken
-	if err := rows.Scan(&token.Token); err != nil {
-		return nil, err
-	}
-	return &token, nil
 }

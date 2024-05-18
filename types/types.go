@@ -44,14 +44,19 @@ type SendEmail struct {
 }
 
 type NotificationStore interface {
-	GetUserByID(id uuid.UUID) (*Notifications, error)
-	GetRepositoryByUserID(id uuid.UUID, reponame string) (*Notifications, error)
-	CreateNotification(notif *Notifications) error
+	GetUserByID(id uuid.UUID) (*User, error)
+	CreateNotification(notif *NotificationSubscription) error
+	GetEventTypeByName(eventType string) (uuid.UUID, error)
+	GetRepoIDByName(repoName string) (uuid.UUID, error)
+	CreateEvent(event *Event) error
+	GetInstallationIDByUser(userId uuid.UUID) (int, error)
 }
 type Notifications struct {
-	UserId   uuid.UUID `json:"user_id"`
-	RepoName string    `json:"repository_name"`
-	Events   []string  `json:"events"`
+	UserId uuid.UUID `json:"user_id"`
+	Repos  []struct {
+		RepoName string   `json:"repo_name"`
+		Events   []string `json:"events"`
+	} `json:"repos"`
 }
 
 type User struct {
@@ -81,6 +86,12 @@ type Installation struct {
 	UserID    uuid.UUID  `json:"user_id"`
 	RevokedAt *time.Time `json:"revoked_at,omitempty"` // pointer to time.Time to allow nil values
 	CreatedAt time.Time  `json:"created_at"`
+}
+
+type InstallationStore interface {
+	GetUserIdByUsername(username string) (uuid.UUID, error)
+	CreateInstallation(userId uuid.UUID, installationId int) error
+	CreateRepository(userId uuid.UUID, repoName string) error
 }
 
 type EventType struct {

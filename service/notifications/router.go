@@ -7,7 +7,6 @@ import (
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
 	"github.com/go-playground/validator"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -37,19 +36,69 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
 		return
 	}
-	username := "MatthewAraujo"
-	uuidStr := "5281c474-98b3-454a-b558-c2dbd53779e0"
-	userId, err := uuid.Parse(uuidStr)
+
+	user, err := h.store.GetUserByID(payload.UserId)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	err = CreateWebhook(username, userId, payload.RepoName, payload.Events)
+	if user == nil {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("user not found"))
+		return
+	}
+
+	installationId, err := h.store.GetInstallationIDByUser(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Webhook created for %s", payload.RepoName))
+	for _, repo := range payload.Repos {
+		err := CreateWebhook(installationId, user.Username, user.ID, repo.RepoName, repo.Events)
+
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		repoId, err := h.store.GetRepoIDByName(repo.RepoName)
+		if err != nil {
+			if err.Error() == "repo not found" {
+				utils.WriteError(w, http.StatusNotFound, err)
+				return
+			}
+			utils.WriteError(w, http.StatusInternalServerError, err)
+		}
+
+		for _, event := range repo.Events {
+			eventId, err := h.store.GetEventTypeByName(event)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			notif := &types.NotificationSubscription{
+				UserID: user.ID,
+				RepoID: repoId,
+			}
+
+			if err := h.store.CreateNotification(notif); err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			event := &types.Event{
+				RepoID:    repoId,
+				EventType: eventId,
+			}
+
+			if err := h.store.CreateEvent(event); err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Notification created for %s", user.Username))
 }

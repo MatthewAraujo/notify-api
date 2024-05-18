@@ -11,10 +11,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func CreateWebhook(username string, userId uuid.UUID, reponame string, events []string) error {
+func CreateWebhook(installationId int, username string, userId uuid.UUID, reponame string, events []string) error {
 
 	godotenv.Load()
-	token, err := generateAccessToken(userId)
+	token, err := generateAccessToken(installationId, userId)
 	if err != nil {
 		return err
 	}
@@ -46,20 +46,17 @@ func CreateWebhook(username string, userId uuid.UUID, reponame string, events []
 
 	}
 
-	return err
+	return nil
 }
 
 // generate access token
-func generateAccessToken(userId uuid.UUID) (string, error) {
+func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
 	jwt, err := auth.GenerateJWT()
 	if err != nil {
 		return "", err
 	}
 
-	// how i will get this????
-	// i wuill get this from the database
-	installationID := "50690203"
-	accessToken, err := auth.RequestAccessToken(userId, installationID, jwt)
+	accessToken, err := auth.RequestAccessToken(userId, installationId, jwt)
 	if err != nil {
 		return "", err
 	}
@@ -68,7 +65,10 @@ func generateAccessToken(userId uuid.UUID) (string, error) {
 }
 
 func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
+
 	client := &http.Client{}
+
+	//prinft payload
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payloadBytes))
 	if err != nil {
