@@ -1,5 +1,4 @@
 rota de webhooks:
-CRUD: webhook - Criar um webhook - Editar um webhook: - eventos - Deletar um webhook
 [] - Usuario pode adicionar novos repositorios do github
 json escrito: "added"
 
