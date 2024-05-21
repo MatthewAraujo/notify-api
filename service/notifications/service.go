@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/auth"
+	"github.com/MatthewAraujo/notify/types"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
@@ -49,6 +51,89 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	return nil
 }
 
+func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
+
+	log.Printf("Deleting webhooks for user %s", userId)
+	// get the installation id
+	installationId, err := db.GetInstallationIDByUser(userId)
+	if err != nil {
+		return err
+	}
+
+	// get the username
+	user, err := db.GetUserByID(userId)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Username: %s", user.Username)
+
+	// get all repos for the user that is on the NotificationSubscription
+	repos, err := db.GetAllReposFromUserInNotificationSubscription(userId)
+	if err != nil {
+		return err
+	}
+
+	for _, repo := range repos {
+		log.Printf("Deleting webhook for %s", repo.RepoName)
+		err = deleteWebhook(installationId, user, repo.RepoName, userId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func deleteWebhook(installationId int, user *types.User, reponame string, userId uuid.UUID) error {
+
+	godotenv.Load()
+	token, err := generateAccessToken(installationId, userId)
+	if err != nil {
+		return err
+	}
+
+	// create a webhook
+	githubUrl := "https://api.github.com/"
+	url := githubUrl + "repos/" + user.Username + "/" + reponame + "/hooks"
+
+	err = deletePayloadToGitHub(url, token)
+	if err != nil {
+		return err
+
+	}
+
+	return nil
+}
+
+func deletePayloadToGitHub(url, token string) error {
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return err
+	}
+
+	// Set the headers
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check the response status
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("failed to delete hook: %s", resp.Status)
+	}
+
+	return nil
+}
+
 // generate access token
 func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
 	jwt, err := auth.GenerateJWT()
@@ -63,7 +148,6 @@ func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
 
 	return accessToken, nil
 }
-
 func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 
 	client := &http.Client{}

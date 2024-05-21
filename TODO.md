@@ -5,6 +5,14 @@ json escrito: "added"
 Dentro da rota de installation verificar o payload para saber se é "created" ou "added"
 quando for created cria um installation ID
 quando for added adiciona novo repositorios
+[X] - quando for deleted apagar tudo deste usuario - checar fluxo inteiro porem acho que ta funfando
+
+refazer a rota de notification pois nao fiz nenhuma logica incluindo o github, apenas no banco de dados
+rota de edit
+[x] - rota de delete
+
+criar payload para deletar um webhook
+criar payload para editar um webhook
 
 USER
 Fazer logica de deletar usuario

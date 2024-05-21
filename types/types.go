@@ -6,16 +6,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type InstallationWebhooks struct {
+type GithubInstallation struct {
+	Action       string `json:"action"`
 	Installation struct {
 		Id      int `json:"id"`
 		Account struct {
 			Login string `json:"login"`
 		}
 	} `json:"installation"`
-	Repositories []struct {
-		Name string `json:"name"`
-	}
+	Repositories        []Repos `json:"repositories"`
+	RepositoriesAdded   []Repos `json:"repositories_added"`
+	RepositoriesRemoved []Repos `json:"repositories_removed"`
+}
+type Repos struct {
+	Name string `json:"name"`
 }
 
 type GithubWebhooks struct {
@@ -112,6 +116,11 @@ type InstallationStore interface {
 	CreateRepository(userId uuid.UUID, repoName string) error
 	CheckIfRepoExists(repoName string) (bool, error)
 	CheckIfInstallationExists(userId uuid.UUID) (bool, error)
+	GetUserIdByInstallationId(installationId int) (uuid.UUID, error)
+	RevokeUser(userId uuid.UUID) error
+	GetInstallationIDByUser(userId uuid.UUID) (int, error)
+	GetUserByID(id uuid.UUID) (*User, error)
+	GetAllReposFromUserInNotificationSubscription(userId uuid.UUID) ([]*Repository, error)
 }
 
 type EventType struct {
