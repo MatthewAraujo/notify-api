@@ -172,6 +172,12 @@ func (h *Handler) EditNotification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		err = UpdateWebhook(user.Username, user.ID, payload.RepoName, payload.Events, h.store)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
 		notif := &types.NotificationSubscription{
 			UserID: user.ID,
 			RepoID: repo,
