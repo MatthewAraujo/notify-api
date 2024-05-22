@@ -1,10 +1,4 @@
-rota de webhooks:
-[] - Usuario pode adicionar novos repositorios do github
-json escrito: "added"
-
-Dentro da rota de installation verificar o payload para saber se é "created" ou "added"
-quando for created cria um installation ID
-quando for added adiciona novo repositorios
+[]-testar payload para editar um webhook
 
 USER
 Fazer logica de deletar usuario

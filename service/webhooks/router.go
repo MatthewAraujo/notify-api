@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/service/mailer"
+	"github.com/MatthewAraujo/notify/service/notifications"
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
 	"github.com/go-playground/validator"
@@ -28,61 +29,132 @@ func (h *Handler) Register(mux *mux.Router) {
 }
 
 func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
-	var payload types.InstallationWebhooks
+	var payload types.GithubInstallation
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := utils.Validate.Struct(payload); err != nil {
-		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
-		return
-	}
+	if payload.Action == "created" {
+		if err := utils.Validate.Struct(payload); err != nil {
+			errors := err.(validator.ValidationErrors)
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
+			return
+		}
 
-	userId, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+		userId, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
 
-	installationId := payload.Installation.Id
+		installationId := payload.Installation.Id
 
-	//Check if the installation already exists
-	exists, err := h.store.CheckIfInstallationExists(userId)
-	if err != nil {
-		return
-	}
-
-	if exists {
-		log.Printf("Installation already exists for %s", payload.Installation.Account.Login)
-		return
-	}
-
-	if err := h.store.CreateInstallation(userId, installationId); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-	//store repositories for the user
-	for _, repo := range payload.Repositories {
-		//Check if the repo already exists
-		exists, err := h.store.CheckIfRepoExists(repo.Name)
+		//Check if the installation already exists
+		exists, err := h.store.CheckIfInstallationExists(userId)
 		if err != nil {
 			return
 		}
 
 		if exists {
-			log.Printf("Repository already exists for %s", repo.Name)
+			log.Printf("Installation already exists for %s", payload.Installation.Account.Login)
 			return
 		}
 
-		if err := h.store.CreateRepository(userId, repo.Name); err != nil {
-			log.Printf("Error creating repository for %s", repo.Name)
+		if err := h.store.CreateInstallation(userId, installationId); err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
+		}
+		//store repositories for the user
+		for _, repo := range payload.Repositories {
+			//Check if the repo already exists
+			exists, err := h.store.CheckIfRepoExists(repo.Name)
+			if err != nil {
+				return
+			}
+
+			if exists {
+				log.Printf("Repository already exists for %s", repo.Name)
+				return
+			}
+
+			if err := h.store.CreateRepository(userId, repo.Name); err != nil {
+				log.Printf("Error creating repository for %s", repo.Name)
+				return
+			}
+		}
+
+		utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Installation created for %s", payload.Installation.Account.Login))
+	}
+	if payload.Action == "added" {
+
+		if err := utils.Validate.Struct(payload); err != nil {
+			errors := err.(validator.ValidationErrors)
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
+			return
+		}
+
+		userId, err := h.store.GetUserIdByInstallationId(payload.Installation.Id)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		for _, repo := range payload.RepositoriesAdded {
+			//Check if the repo already exists
+			exists, err := h.store.CheckIfRepoExists(repo.Name)
+			if err != nil {
+				return
+			}
+
+			if exists {
+				log.Printf("Repository already exists for %s", repo.Name)
+				return
+			}
+
+			if err := h.store.CreateRepository(userId, repo.Name); err != nil {
+				log.Printf("Error creating repository for %s", repo.Name)
+				return
+			}
+
 		}
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Installation created for %s", payload.Installation.Account.Login))
+	if payload.Action == "deleted" {
+
+		if err := utils.Validate.Struct(payload); err != nil {
+			errors := err.(validator.ValidationErrors)
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
+			return
+		}
+
+		userId, err := h.store.GetUserIdByInstallationId(payload.Installation.Id)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		log.Printf("Removing subscription for %s", userId)
+
+		// remove on github
+		err = notifications.DeleteWebhook(userId, h.store)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		err = h.store.RevokeUser(userId)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		utils.WriteJSON(w, http.StatusOK, "subscription deleted")
+
+	} else {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid action"))
+		return
+	}
 }
 
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
