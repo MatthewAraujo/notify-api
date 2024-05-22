@@ -143,9 +143,6 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("Subscription removed for %s", userId)
-		// Delete subscription
-
 		err = h.store.RevokeUser(userId)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)

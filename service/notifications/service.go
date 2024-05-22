@@ -51,6 +51,40 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	return nil
 }
 
+func UpdateWebhook(username string, userID uuid.UUID, reponame string, events types.Events, db types.NotificationStore) error {
+	log.Printf("updating webhook for %s", reponame)
+	// get the installation id
+	installationId, err := db.GetInstallationIDByUser(userID)
+	if err != nil {
+		return err
+	}
+
+	addedEvents := events.Added
+	removedEvents := events.Remove
+
+	err = updateWebhook(installationId, username, userID, reponame, addedEvents, removedEvents)
+
+	return nil
+}
+
+func updateWebhook(installationId int, username string, userId uuid.UUID, reponame string, addedEvents, removedEvents []string) error {
+	token, err := generateAccessToken(installationId, userId)
+	if err != nil {
+		return err
+	}
+
+	// create a webhook
+	githubUrl := "https://api.github.com/"
+	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks"
+
+	err = updatePayloadToGitHub(url, token, addedEvents, removedEvents)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
 
 	log.Printf("Deleting webhooks for user %s", userId)
@@ -86,7 +120,6 @@ func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
 
 func deleteWebhook(installationId int, user *types.User, reponame string, userId uuid.UUID) error {
 
-	godotenv.Load()
 	token, err := generateAccessToken(installationId, userId)
 	if err != nil {
 		return err
@@ -174,6 +207,42 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 
 	// Check the response status code
 	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func updatePayloadToGitHub(url, token string, addedEvents, removedEvents []string) error {
+	payload := map[string]interface{}{
+		"active":        true,
+		"add_events":    addedEvents,
+		"remove_events": removedEvents,
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return err
+	}
+	// Set the headers
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 

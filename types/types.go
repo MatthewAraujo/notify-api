@@ -154,9 +154,13 @@ type AccessToken struct {
 
 type EditNotification struct {
 	RepoName string `json:"repo_name"`
-	Events   struct {
-		Added  []string `json:"added"`
-		Remove []string `json:"remove"`
-	} `json:"events"`
+
+	Events Events `json:"events"`
+
 	UserID uuid.UUID `json:"user_id"`
+}
+
+type Events struct {
+	Added  []string `json:"added"`
+	Remove []string `json:"remove"`
 }
