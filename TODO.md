@@ -1,8 +1,8 @@
-[]-testar payload para editar um webhook
-
 USER
 Fazer logica de deletar usuario
 Fazer a logica de criar usuario com OAUTH - ver video do mewjke https://youtu.be/iHFQyd__2A0?si=pW82GF-D9WYu34vK
+
+olhar bem as respostas do webhook github para enviar os emails e ver o melhor jeito de mandar as melhores informações
 
 para o front
 rota para pegar todos o eventos

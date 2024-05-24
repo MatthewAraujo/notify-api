@@ -12,7 +12,7 @@ import (
 	"github.com/MatthewAraujo/notify/config"
 	"github.com/MatthewAraujo/notify/db"
 	"github.com/MatthewAraujo/notify/utils"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 )
 
@@ -23,8 +23,19 @@ func GenerateJWT() (string, error) {
 			log.Printf("Token not found, generating new token")
 		}
 	} else {
-		return token, nil
+		log.Printf("Token found in database")
+		isExpired, err := IsTokenExpired(token)
+		if err != nil {
+			return "", err
+		}
+
+		if !isExpired {
+			return token, nil
+		}
+
+		log.Printf("Token expired, generating new token")
 	}
+
 	godotenv.Load()
 
 	app_id := os.Getenv("APP_ID")
@@ -64,7 +75,28 @@ func GenerateJWT() (string, error) {
 		return "", err
 	}
 
+	log.Printf("Token generated and saved to database: %s", token)
+
 	return tokenString, nil
+}
+
+// IsTokenExpired checks if the provided token is expired
+func IsTokenExpired(tokenString string) (bool, error) {
+	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		return true, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		if exp, ok := claims["exp"].(float64); ok {
+			if int64(exp) > time.Now().Unix() {
+				return false, nil // Token is not expired
+			}
+			return true, nil // Token is expired
+		}
+	}
+
+	return true, fmt.Errorf("invalid token claims")
 }
 
 func InsertJwtToken(token string) error {

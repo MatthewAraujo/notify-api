@@ -40,6 +40,7 @@ CREATE TABLE NotificationSubscription (
     id TEXT PRIMARY KEY,
     repo_id TEXT NOT NULL,
     removed BOOLEAN DEFAULT FALSE,
+    hook_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (repo_id) REFERENCES Repository(id) ON DELETE CASCADE

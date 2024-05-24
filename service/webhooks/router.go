@@ -123,14 +123,11 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 	if payload.Action == "deleted" {
 
 		if err := utils.Validate.Struct(payload); err != nil {
-			errors := err.(validator.ValidationErrors)
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
 			return
 		}
 
 		userId, err := h.store.GetUserIdByInstallationId(payload.Installation.Id)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -139,20 +136,15 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 		// remove on github
 		err = notifications.DeleteWebhook(userId, h.store)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		err = h.store.RevokeUser(userId)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, "subscription deleted")
-
 	} else {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid action"))
 		return
 	}
 }
@@ -160,13 +152,25 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 	var payload types.GithubWebhooks
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err := utils.Validate.Struct(payload); err != nil {
-		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
 		return
+	}
+
+	hook, err := h.store.CheckIfHookIdExistsInNotificationSubscription(payload.HookId)
+	if err != nil {
+		return
+	}
+
+	if !hook {
+		err := h.store.AddHookIdInNotificationSubscription(payload.Repository.FullName, payload.HookId)
+		if err != nil {
+			if err.Error() == "repo not found" {
+				return
+			}
+			return
+		}
 	}
 
 	bodyEmail := types.SendEmail{

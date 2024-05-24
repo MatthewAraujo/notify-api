@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -93,14 +94,15 @@ func GetAccessToken(id uuid.UUID) (string, error) {
 	var token string
 	err = db.QueryRow("SELECT token FROM AccessToken WHERE user_id = ?", id).Scan(&token)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("access token not found")
+		}
 		return "", err
 	}
 
 	if token == "" {
 		return "", fmt.Errorf("access token not found")
 	}
-
-	log.Printf("Access token found in database")
 
 	return token, nil
 }
