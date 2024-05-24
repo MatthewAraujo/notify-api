@@ -172,22 +172,6 @@ func (h *Handler) EditNotification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = UpdateWebhook(user.Username, user.ID, payload.RepoName, payload.Events, h.store)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		notif := &types.NotificationSubscription{
-			UserID: user.ID,
-			RepoID: repo,
-		}
-
-		if err := h.store.CreateNotification(notif); err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
-			return
-		}
-
 		event := &types.Event{
 			RepoID:    repo,
 			EventType: eventId,
@@ -197,6 +181,22 @@ func (h *Handler) EditNotification(w http.ResponseWriter, r *http.Request) {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
+	}
+
+	err = UpdateWebhook(user.Username, user.ID, payload.RepoName, payload.Events, h.store)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	notif := &types.NotificationSubscription{
+		UserID: user.ID,
+		RepoID: repo,
+	}
+
+	if err := h.store.CreateNotification(notif); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
 	}
 
 	for range payload.Events.Remove {
@@ -286,16 +286,6 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			notif := &types.NotificationSubscription{
-				UserID: user.ID,
-				RepoID: repoId,
-			}
-
-			if err := h.store.CreateNotification(notif); err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, err)
-				return
-			}
-
 			event := &types.Event{
 				RepoID:    repoId,
 				EventType: eventId,
@@ -306,6 +296,17 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+
+		notif := &types.NotificationSubscription{
+			UserID: user.ID,
+			RepoID: repoId,
+		}
+
+		if err := h.store.CreateNotification(notif); err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Notification created for %s", user.Username))

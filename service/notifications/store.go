@@ -178,6 +178,21 @@ func (s *Store) CheckIfRepoHasEventById(repoID uuid.UUID, eventName uuid.UUID) (
 	return exists, nil
 }
 
+// Webhook
+func (s *Store) GetHookIdByRepoName(name string) (int, error) {
+
+	query := `
+		SELECT hook_id
+		FROM NotificationSubscription
+		WHERE repo_id = (SELECT id FROM Repository WHERE repo_name = ?)`
+	var id int
+	err := s.db.QueryRow(query, name).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
 func (s *Store) scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	var user types.User
 	if err := rows.Scan(&user.ID, &user.Username); err != nil {

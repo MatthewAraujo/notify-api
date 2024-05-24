@@ -22,7 +22,7 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	}
 
 	// create a webhook
-	serverUrl := "https://scarce-joystick-04.webhook.cool"
+	serverUrl := "https://shy-shampoo-59.webhook.cool"
 	githubUrl := "https://api.github.com/"
 	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks"
 
@@ -52,9 +52,14 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 }
 
 func UpdateWebhook(username string, userID uuid.UUID, reponame string, events types.Events, db types.NotificationStore) error {
-	log.Printf("updating webhook for %s", reponame)
 	// get the installation id
 	installationId, err := db.GetInstallationIDByUser(userID)
+	if err != nil {
+		return err
+	}
+
+	// get the hook id
+	hookId, err := db.GetHookIdByRepoName(reponame)
 	if err != nil {
 		return err
 	}
@@ -62,12 +67,15 @@ func UpdateWebhook(username string, userID uuid.UUID, reponame string, events ty
 	addedEvents := events.Added
 	removedEvents := events.Remove
 
-	err = updateWebhook(installationId, username, userID, reponame, addedEvents, removedEvents)
+	err = updateWebhook(installationId, username, userID, reponame, addedEvents, removedEvents, hookId)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func updateWebhook(installationId int, username string, userId uuid.UUID, reponame string, addedEvents, removedEvents []string) error {
+func updateWebhook(installationId int, username string, userId uuid.UUID, reponame string, addedEvents, removedEvents []string, hookId int) error {
 	token, err := generateAccessToken(installationId, userId)
 	if err != nil {
 		return err
@@ -75,9 +83,11 @@ func updateWebhook(installationId int, username string, userId uuid.UUID, repona
 
 	// create a webhook
 	githubUrl := "https://api.github.com/"
-	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks"
+	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks" + fmt.Sprintf("/%d", hookId)
 
-	err = updatePayloadToGitHub(url, token, addedEvents, removedEvents)
+	log.Printf("URL: %s", url)
+	log.Printf("access token: %s", token)
+	err = updatePayloadToGithub(url, token, addedEvents, removedEvents)
 	if err != nil {
 		return err
 	}
@@ -213,7 +223,7 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 	return nil
 }
 
-func updatePayloadToGitHub(url, token string, addedEvents, removedEvents []string) error {
+func updatePayloadToGithub(url, token string, addedEvents, removedEvents []string) error {
 	payload := map[string]interface{}{
 		"active":        true,
 		"add_events":    addedEvents,

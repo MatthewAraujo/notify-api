@@ -23,6 +23,7 @@ type Repos struct {
 }
 
 type GithubWebhooks struct {
+	HookId     int `json:"hook_id"`
 	Repository struct {
 		FullName string `json:"full_name"`
 		Owner    struct {
@@ -72,6 +73,9 @@ type NotificationStore interface {
 	GetEventTypeByName(eventType string) (uuid.UUID, error)
 	CreateEvent(event *Event) error
 	DeleteEventForRepo(repoId uuid.UUID) error
+
+	//Webhook
+	GetHookIdByRepoName(repoName string) (int, error)
 }
 type Notifications struct {
 	UserId uuid.UUID `json:"user_id"`
@@ -121,6 +125,10 @@ type InstallationStore interface {
 	GetInstallationIDByUser(userId uuid.UUID) (int, error)
 	GetUserByID(id uuid.UUID) (*User, error)
 	GetAllReposFromUserInNotificationSubscription(userId uuid.UUID) ([]*Repository, error)
+
+	//Webhook
+	AddHookIdInNotificationSubscription(reponame string, hookId int) error
+	CheckIfHookIdExistsInNotificationSubscription(hookId int) (bool, error)
 }
 
 type EventType struct {

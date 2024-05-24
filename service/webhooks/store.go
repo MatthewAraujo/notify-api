@@ -187,6 +187,35 @@ func (s *Store) GetInstallationIDByUser(id uuid.UUID) (int, error) {
 	return installationID, nil
 }
 
+func (s *Store) CheckIfHookIdExistsInNotificationSubscription(hookId int) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM NotificationSubscription WHERE hook_id = ?)", hookId).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *Store) AddHookIdInNotificationSubscription(reponame string, hookId int) error {
+	query := `
+		UPDATE NotificationSubscription
+		SET hook_id = ?
+		WHERE repo_id = (SELECT id FROM Repository WHERE repo_name = ?)
+	`
+
+	_, err := s.db.Exec(query, hookId, reponame)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("repo not found")
+		}
+
+		return err
+	}
+
+	return err
+
+}
+
 func (s *Store) scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	var user types.User
 	if err := rows.Scan(&user.ID, &user.Username); err != nil {
