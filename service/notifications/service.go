@@ -21,7 +21,6 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	if err != nil {
 		return err
 	}
-	log.Printf("Token: %s", token)
 
 	// create a webhook
 	serverUrl := "https://boring-orange-82.webhook.cool"
@@ -43,8 +42,6 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	if err != nil {
 		return err
 	}
-
-	log.Print("Sending payload to github")
 
 	err = sendPayloadToGitHub(url, token, payloadBytes)
 	if err != nil {
@@ -113,8 +110,6 @@ func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
 	if err != nil {
 		return err
 	}
-
-	log.Printf("Username: %s", user.Username)
 
 	// get all repos for the user that is on the NotificationSubscription
 	repos, err := db.GetAllReposFromUserInNotificationSubscription(userId)
@@ -197,7 +192,6 @@ func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("JWT: %s", jwt)
 
 	accessToken, err := auth.RequestAccessToken(userId, installationId, jwt)
 	if err != nil {
@@ -241,7 +235,7 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 		if err := json.Unmarshal(body, &ghErr); err != nil {
 			return fmt.Errorf("unexpected response status: %s", resp.Status)
 		}
-		return fmt.Errorf("GitHub API error: %s, Details: %+v", ghErr.Message, ghErr.Errors)
+		return err
 
 	}
 
@@ -289,7 +283,6 @@ func updatePayloadToGithub(url, token string, addedEvents, removedEvents []strin
 			return fmt.Errorf("unexpected response status: %s", resp.Status)
 		}
 		return fmt.Errorf("GitHub API error: %s, Details: %+v", ghErr.Message, ghErr.Errors)
-
 	}
 
 	return nil

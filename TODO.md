@@ -3,8 +3,6 @@ olhar bem as respostas do webhook github para enviar os emails e ver o melhor je
 melhorar a parte de pegar o repositorio
 melhorar tratamento de erros
 apagar os JWTs antigos
-ver pq nao esta funcionando a criaçao do access token via codigo - esta retornando 401 autherizeted porem
-qnd envio com o curl command funciona normalmente
 
 para o front
 rota para pegar todos o eventos

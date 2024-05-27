@@ -280,7 +280,6 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("Criando webhook")
 		err = CreateWebhook(installationId, user.Username, user.ID, repo.RepoName, repo.Events)
 
 		if err != nil {
