@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -32,20 +33,20 @@ func RequestAccessToken(userId uuid.UUID, installationID int, jwtToken string) (
 		}
 	}
 
-	// Create HTTP client
-	client := &http.Client{}
-
+	log.Printf("Access token not found in database, requesting new token")
 	// Create request
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationID), nil)
+	req, err := http.NewRequest("POST", "https://api.github.com/app/installations/51206800/access_tokens", bytes.NewBuffer([]byte{}))
 	if err != nil {
 		return "", err
 	}
 
 	// Add headers
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jwtToken))
+	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 
+	// Create HTTP client
+	client := &http.Client{}
 	// Send request
 	resp, err := client.Do(req)
 	if err != nil {
@@ -78,6 +79,7 @@ func RequestAccessToken(userId uuid.UUID, installationID int, jwtToken string) (
 		Token:  token,
 		UserId: userId,
 	})
+
 	if err != nil {
 		return "", err
 	}

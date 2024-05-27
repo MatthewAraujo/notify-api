@@ -134,6 +134,7 @@ func (s *Store) CheckIfEventTypeExistsByName(name string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return exists, nil
 }
 
@@ -142,7 +143,7 @@ func (s *Store) GetInstallationIDByUser(id uuid.UUID) (int, error) {
 	var installationID int
 	err := s.db.QueryRow("SELECT installation_id FROM installation WHERE user_id = ?", id).Scan(&installationID)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("installation not found")
 	}
 
 	return installationID, nil

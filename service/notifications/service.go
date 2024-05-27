@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -20,9 +21,10 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	if err != nil {
 		return err
 	}
+	log.Printf("Token: %s", token)
 
 	// create a webhook
-	serverUrl := "https://shy-shampoo-59.webhook.cool"
+	serverUrl := "https://boring-orange-82.webhook.cool"
 	githubUrl := "https://api.github.com/"
 	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks"
 
@@ -41,6 +43,8 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	if err != nil {
 		return err
 	}
+
+	log.Print("Sending payload to github")
 
 	err = sendPayloadToGitHub(url, token, payloadBytes)
 	if err != nil {
@@ -169,9 +173,19 @@ func deletePayloadToGitHub(url, token string) error {
 	}
 	defer resp.Body.Close()
 
-	// Check the response status
-	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to delete hook: %s", resp.Status)
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var ghErr types.GitHubError
+		if err := json.Unmarshal(body, &ghErr); err != nil {
+			return fmt.Errorf("unexpected response status: %s", resp.Status)
+		}
+		return fmt.Errorf("GitHub API error: %s, Details: %+v", ghErr.Message, ghErr.Errors)
+
 	}
 
 	return nil
@@ -183,6 +197,7 @@ func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Printf("JWT: %s", jwt)
 
 	accessToken, err := auth.RequestAccessToken(userId, installationId, jwt)
 	if err != nil {
@@ -215,9 +230,19 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 	}
 	defer resp.Body.Close()
 
-	// Check the response status code
-	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var ghErr types.GitHubError
+		if err := json.Unmarshal(body, &ghErr); err != nil {
+			return fmt.Errorf("unexpected response status: %s", resp.Status)
+		}
+		return fmt.Errorf("GitHub API error: %s, Details: %+v", ghErr.Message, ghErr.Errors)
+
 	}
 
 	return nil
@@ -252,8 +277,19 @@ func updatePayloadToGithub(url, token string, addedEvents, removedEvents []strin
 	}
 	defer resp.Body.Close()
 
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		var ghErr types.GitHubError
+		if err := json.Unmarshal(body, &ghErr); err != nil {
+			return fmt.Errorf("unexpected response status: %s", resp.Status)
+		}
+		return fmt.Errorf("GitHub API error: %s, Details: %+v", ghErr.Message, ghErr.Errors)
+
 	}
 
 	return nil

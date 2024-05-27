@@ -38,13 +38,13 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 	if payload.Action == "created" {
 		if err := utils.Validate.Struct(payload); err != nil {
 			errors := err.(validator.ValidationErrors)
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
+			log.Printf("validation error: %s", errors)
 			return
 		}
 
 		userId, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+		if err != nil && err.Error() == "user not found" {
+			log.Printf("User not found for %s", payload.Installation.Account.Login)
 			return
 		}
 
@@ -150,6 +150,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Received webhook")
 	var payload types.GithubWebhooks
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		return

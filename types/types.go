@@ -6,6 +6,17 @@ import (
 	"github.com/google/uuid"
 )
 
+type GitHubError struct {
+	Message          string `json:"message"`
+	DocumentationURL string `json:"documentation_url"`
+	Errors           []struct {
+		Resource string `json:"resource"`
+		Code     string `json:"code"`
+		Field    string `json:"field"`
+		Message  string `json:"message"`
+	} `json:"errors"`
+}
+
 type GithubInstallation struct {
 	Action       string `json:"action"`
 	Installation struct {

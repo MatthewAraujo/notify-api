@@ -46,10 +46,6 @@ CREATE TABLE NotificationSubscription (
     FOREIGN KEY (repo_id) REFERENCES Repository(id) ON DELETE CASCADE
 );
 
-CREATE TABLE JwtToken (
-    token VARCHAR(255) PRIMARY KEY
-);
-
 CREATE TABLE AccessToken (
     token VARCHAR(255) PRIMARY KEY,
     user_id TEXT NOT NULL,

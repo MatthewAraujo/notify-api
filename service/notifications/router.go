@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/types"
@@ -233,15 +234,20 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("user not found"))
 		return
 	}
-
+	log.Printf("Pegando installationId")
 	installationId, err := h.store.GetInstallationIDByUser(user.ID)
 	if err != nil {
+		if err.Error() == "installation not found" {
+			utils.WriteError(w, http.StatusNotFound, fmt.Errorf("installation not found"))
+			return
+		}
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	for _, repo := range payload.Repos {
 		// check if the repo already exists
+		log.Printf("Checking if repo exists")
 		exists, err := h.store.CheckIfRepoExists(repo.RepoName)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
@@ -252,6 +258,7 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 			utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
 			return
 		}
+		log.Printf("Pegando repoId")
 		repoId, err := h.store.GetRepoIDByName(repo.RepoName)
 		if err != nil {
 			if err.Error() == "repo not found" {
@@ -261,6 +268,7 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 		}
 		// check if the notification already exists
+		log.Printf("Checking if notification exists")
 		exists, err = h.store.CheckIfNotificationExistsForUserId(user.ID, repoId)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
@@ -272,6 +280,7 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Printf("Criando webhook")
 		err = CreateWebhook(installationId, user.Username, user.ID, repo.RepoName, repo.Events)
 
 		if err != nil {

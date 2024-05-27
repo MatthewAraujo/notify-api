@@ -25,7 +25,7 @@ func (s *Store) GetUserIdByUsername(username string) (uuid.UUID, error) {
 	var userId uuid.UUID
 	err := s.db.QueryRow("SELECT id FROM user WHERE username = ?", username).Scan(&userId)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("user not found")
 	}
 
 	return userId, nil
