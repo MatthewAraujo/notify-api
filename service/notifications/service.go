@@ -127,6 +127,7 @@ func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
 		err = deleteWebhook(installationId, user, repo.RepoName, userId)
 		if err != nil {
 			return err
+
 		}
 	}
 	return nil
