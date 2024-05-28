@@ -45,8 +45,8 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 
 	err = sendPayloadToGitHub(url, token, payloadBytes)
 	if err != nil {
-		return err
 
+		return err
 	}
 
 	return nil
@@ -205,8 +205,6 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 
 	client := &http.Client{}
 
-	//prinft payload
-
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payloadBytes))
 	if err != nil {
 		return err
@@ -231,13 +229,12 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusCreated {
 		var ghErr types.GitHubError
 		if err := json.Unmarshal(body, &ghErr); err != nil {
 			return fmt.Errorf("unexpected response status: %s", resp.Status)
 		}
-		return err
-
+		return fmt.Errorf("GitHub API error: %s, Details: %+v", ghErr.Message, ghErr.Errors)
 	}
 
 	return nil

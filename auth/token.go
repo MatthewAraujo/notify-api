@@ -35,14 +35,14 @@ func RequestAccessToken(userId uuid.UUID, installationID int, jwtToken string) (
 
 	log.Printf("Access token not found in database, requesting new token")
 	// Create request
-	req, err := http.NewRequest("POST", "https://api.github.com/app/installations/51206800/access_tokens", bytes.NewBuffer([]byte{}))
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationID), bytes.NewBuffer([]byte{}))
 	if err != nil {
 		return "", err
 	}
 
 	// Add headers
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", "Bearer "+jwtToken)
+	req.Header.Set("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTY4NTk3NTksImlhdCI6MTcxNjg1OTE1OSwiaXNzIjoiODk3MzkyIn0.JCf3DZr7FyZ7X15noD0eX4q2ih1rD0CTb_RMLkF_yLDcsfA-QR3iwZXaJqrgbWpDojXaQPGtD7_Ki5In1LMTrjQAYywYYlEm3DOmR03rai17au5cxOWIatS_sHHVG6fUg8FFL0k_75hnAGxT1nZiALeaQd0H3RLihe7c3WI5CZCkKoCna0y4U-hapHNzuvn1mxaWNume1SbOEqGj_ImaoIy2ZE0puALN6n4_dTgUkLB7N961AL4Io-KaglkVfy0Icinkd8oxqBxklsK0U6kXsjMT0VLmlua44Jl1X3Ha9NOhky1TuqIsPQ5lESb2PYh0TQtLmz3keLYQ0tDvwUhqTQ")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 
 	// Create HTTP client

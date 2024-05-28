@@ -34,11 +34,13 @@ type Repos struct {
 }
 
 type GithubWebhooks struct {
-	HookId     int `json:"hook_id"`
+	Ref        string `json:"ref"`
+	HookId     int    `json:"hook_id"`
 	Repository struct {
 		FullName string `json:"full_name"`
+		Name     string `json:"name"`
 		Owner    struct {
-			Name  string `json:"name"`
+			Name  string `json:"login"`
 			Email string `json:"email"`
 		} `json:"owner"`
 	} `json:"repository"`
@@ -57,6 +59,12 @@ type SendEmail struct {
 	Sender   string
 	Commit   string
 	Email    string
+}
+
+type WelcomeEmail struct {
+	Email      string
+	Owner      string
+	Repository string
 }
 
 type NotificationStore interface {

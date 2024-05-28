@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/MatthewAraujo/notify/service/mailer"
 	"github.com/MatthewAraujo/notify/service/notifications"
@@ -159,13 +160,18 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Received webhook for %d", payload.HookId)
+
 	hook, err := h.store.CheckIfHookIdExistsInNotificationSubscription(payload.HookId)
 	if err != nil {
 		return
 	}
 
+	log.Printf("Hook exists: %t", hook)
+	log.Printf("Received webhook for %s", payload.Repository.Owner.Name)
+
 	if !hook {
-		err := h.store.AddHookIdInNotificationSubscription(payload.Repository.FullName, payload.HookId)
+		err := h.store.AddHookIdInNotificationSubscription(payload.Repository.Name, payload.HookId)
 		if err != nil {
 			if err.Error() == "repo not found" {
 				return
@@ -174,12 +180,23 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	bodyEmail := types.SendEmail{
-		RepoName: payload.Repository.FullName,
-		Sender:   payload.Repository.Owner.Name,
-		Commit:   payload.Commits[0].Message,
-		Email:    payload.Repository.Owner.Email,
+	if strings.Contains(payload.Ref, "refs/heads/") {
+		bodyEmail := types.SendEmail{
+			RepoName: payload.Repository.FullName,
+			Sender:   payload.Repository.Owner.Name,
+			Commit:   payload.Commits[0].Message,
+			Email:    payload.Repository.Owner.Email,
+		}
+
+		go mailer.SendMail(bodyEmail)
 	}
 
-	go mailer.SendMail(bodyEmail)
+	bodyEmail := types.WelcomeEmail{
+		Email:      payload.Repository.Owner.Email,
+		Owner:      payload.Repository.Owner.Name,
+		Repository: payload.Repository.FullName,
+	}
+
+	go mailer.SendWelcomeEmail(bodyEmail)
+
 }
