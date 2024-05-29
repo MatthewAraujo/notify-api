@@ -105,7 +105,7 @@ type Notifications struct {
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
+	ID        uuid.UUID
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	SoftDel   bool      `json:"soft_del"`

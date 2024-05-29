@@ -276,6 +276,7 @@ func updatePayloadToGithub(url, token string, addedEvents, removedEvents []strin
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("status code: %d", resp.StatusCode)
 		var ghErr types.GitHubError
 		if err := json.Unmarshal(body, &ghErr); err != nil {
 			return fmt.Errorf("unexpected response status: %s", resp.Status)
