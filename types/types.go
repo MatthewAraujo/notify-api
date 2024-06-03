@@ -10,10 +10,7 @@ type GitHubError struct {
 	Message          string `json:"message"`
 	DocumentationURL string `json:"documentation_url"`
 	Errors           []struct {
-		Resource string `json:"resource"`
-		Code     string `json:"code"`
-		Field    string `json:"field"`
-		Message  string `json:"message"`
+		Message string `json:"message"`
 	} `json:"errors"`
 }
 
