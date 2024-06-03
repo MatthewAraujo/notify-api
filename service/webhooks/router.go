@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/MatthewAraujo/notify/service/mailer"
 	"github.com/MatthewAraujo/notify/service/notifications"
@@ -38,20 +39,20 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 	if payload.Action == "created" {
 		if err := utils.Validate.Struct(payload); err != nil {
 			errors := err.(validator.ValidationErrors)
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", errors))
+			log.Printf("validation error: %s", errors)
 			return
 		}
 
-		userId, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+		user, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
+		if err != nil && err.Error() == "user not found" {
+			log.Printf("User not found for %s", payload.Installation.Account.Login)
 			return
 		}
 
 		installationId := payload.Installation.Id
 
 		//Check if the installation already exists
-		exists, err := h.store.CheckIfInstallationExists(userId)
+		exists, err := h.store.CheckIfInstallationExists(user.ID)
 		if err != nil {
 			return
 		}
@@ -61,7 +62,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := h.store.CreateInstallation(userId, installationId); err != nil {
+		if err := h.store.CreateInstallation(user.ID, installationId); err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -78,7 +79,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if err := h.store.CreateRepository(userId, repo.Name); err != nil {
+			if err := h.store.CreateRepository(user.ID, repo.Name); err != nil {
 				log.Printf("Error creating repository for %s", repo.Name)
 				return
 			}
@@ -134,7 +135,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Removing subscription for %s", userId)
 
 		// remove on github
-		err = notifications.DeleteWebhook(userId, h.store)
+		err = notifications.DeleteAllWebhooks(userId, h.store)
 		if err != nil {
 			return
 		}
@@ -150,6 +151,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Received webhook")
 	var payload types.GithubWebhooks
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		return
@@ -163,8 +165,11 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Hook exists: %t", hook)
+	log.Printf("Received webhook for %s", payload.Repository.Owner.Name)
+
 	if !hook {
-		err := h.store.AddHookIdInNotificationSubscription(payload.Repository.FullName, payload.HookId)
+		err := h.store.AddHookIdInNotificationSubscription(payload.Repository.Name, payload.HookId)
 		if err != nil {
 			if err.Error() == "repo not found" {
 				return
@@ -173,12 +178,28 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	bodyEmail := types.SendEmail{
-		RepoName: payload.Repository.FullName,
-		Sender:   payload.Repository.Owner.Name,
-		Commit:   payload.Commits[0].Message,
-		Email:    payload.Repository.Owner.Email,
+	if strings.Contains(payload.Ref, "refs/heads/") {
+		user, err := h.store.GetUserIdByUsername(payload.Repository.Owner.Name)
+		if err != nil {
+			return
+		}
+
+		bodyEmail := types.SendEmail{
+			RepoName: payload.Repository.FullName,
+			Sender:   payload.Repository.Owner.Name,
+			Commit:   payload.Commits[0].Message,
+			Email:    user.Email,
+		}
+
+		go mailer.SendMail(bodyEmail)
 	}
 
-	go mailer.SendMail(bodyEmail)
+	bodyEmail := types.WelcomeEmail{
+		Email:      payload.Repository.Owner.Email,
+		Owner:      payload.Repository.Owner.Name,
+		Repository: payload.Repository.FullName,
+	}
+
+	go mailer.SendWelcomeEmail(bodyEmail)
+
 }

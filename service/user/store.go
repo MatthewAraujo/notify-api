@@ -3,6 +3,7 @@ package user
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/MatthewAraujo/notify/types"
@@ -19,8 +20,8 @@ func NewStore(db *sql.DB) *Store {
 	}
 }
 
-func (s *Store) GetUserByEmail(username string) (*types.User, error) {
-	rows, err := s.db.Query("SELECT id, email FROM user WHERE username = $1", username)
+func (s *Store) GetUserByEmail(email string) (*types.User, error) {
+	rows, err := s.db.Query("SELECT id, email FROM user WHERE email = ?", email)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +36,8 @@ func (s *Store) GetUserByEmail(username string) (*types.User, error) {
 		}
 	}
 
+	log.Printf("user: %v", u)
+
 	if u.ID == uuid.Nil {
 		return nil, fmt.Errorf("user not found")
 	}
@@ -43,7 +46,7 @@ func (s *Store) GetUserByEmail(username string) (*types.User, error) {
 }
 
 func (s *Store) CreateUser(user *types.User) error {
-	_, err := s.db.Exec("INSERT INTO user (id, username, email, created_at) VALUES ($1, $2, $3, $4)", user.ID, user.Username, user.Email, time.Now())
+	_, err := s.db.Exec("INSERT INTO user (id, username, email, created_at) VALUES (?, ?, ?, ?)", uuid.New(), user.Username, user.Email, time.Now())
 	if err != nil {
 		return err
 	}
@@ -52,7 +55,7 @@ func (s *Store) CreateUser(user *types.User) error {
 }
 
 func (s *Store) GetUserByID(id uuid.UUID) (*types.User, error) {
-	rows, err := s.db.Query("SELECT id, username FROM user WHERE id = $1", id)
+	rows, err := s.db.Query("SELECT id, username FROM user WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +77,7 @@ func (s *Store) GetUserByID(id uuid.UUID) (*types.User, error) {
 	return u, nil
 }
 func (s *Store) DeleteUser(id uuid.UUID) error {
-	_, err := s.db.Exec("UPDATE user SET deleted_at = false WHERE id = $2", time.Now(), id)
+	_, err := s.db.Exec("UPDATE user SET deleted_at = false WHERE id = ?", time.Now(), id)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,8 @@ func createEmailMessage(n types.SendEmail) string {
 	message += "Atenciosamente,\nEquipe de Notificações\n"
 	return message
 }
-func SendMail(user types.SendEmail) {
+
+func setupEmail() (smtp.Auth, string) {
 	godotenv.Load()
 	smtpPassword := config.Envs.SMTP.Password
 	stmpAuthor := config.Envs.SMTP.Author
@@ -33,7 +34,11 @@ func SendMail(user types.SendEmail) {
 		smtpHost,
 	)
 
-	msg := createEmailMessage(user)
+	return auth, smtpPort
+
+}
+
+func sendEmail(msg string, user types.SendEmail, smtpHost, smtpPort, stmpAuthor string, auth smtp.Auth) {
 	err := smtp.SendMail(
 		smtpHost+":"+smtpPort,
 		auth,
@@ -45,6 +50,23 @@ func SendMail(user types.SendEmail) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
 
+func SendWelcomeEmail(user types.WelcomeEmail) {
+	msg := fmt.Sprintf("Olá %s,\n\n", user.Owner)
+	msg += fmt.Sprintf("Seja bem-vindo ao repositório %s.\n\n", user.Repository)
+	msg += "Agora você receberá notificações sobre as ações realizadas no repositório.\n\n"
+	msg += "Atenciosamente,\nEquipe de Notificações\n"
+
+	auth, _ := setupEmail()
+	sendEmail(msg, types.SendEmail{Email: user.Email}, config.Envs.SMTP.Host, config.Envs.SMTP.Port, config.Envs.SMTP.Author, auth)
+	log.Println("Email sent to", user.Email)
+}
+
+func SendMail(user types.SendEmail) {
+	msg := createEmailMessage(user)
+
+	auth, _ := setupEmail()
+	sendEmail(msg, user, config.Envs.SMTP.Host, config.Envs.SMTP.Port, config.Envs.SMTP.Author, auth)
 	log.Println("Email sent to", user.Email)
 }

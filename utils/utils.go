@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator"
 )
 
 var Validate = validator.New()

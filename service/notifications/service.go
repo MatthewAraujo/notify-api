@@ -4,25 +4,25 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/auth"
+	"github.com/MatthewAraujo/notify/config"
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 )
 
 func CreateWebhook(installationId int, username string, userId uuid.UUID, reponame string, events []string) error {
 
-	godotenv.Load()
 	token, err := generateAccessToken(installationId, userId)
 	if err != nil {
 		return err
 	}
 
 	// create a webhook
-	serverUrl := "https://shy-shampoo-59.webhook.cool"
+	serverUrl := config.Envs.WebhookUrl
 	githubUrl := "https://api.github.com/"
 	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks"
 
@@ -44,8 +44,8 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 
 	err = sendPayloadToGitHub(url, token, payloadBytes)
 	if err != nil {
-		return err
 
+		return err
 	}
 
 	return nil
@@ -95,8 +95,49 @@ func updateWebhook(installationId int, username string, userId uuid.UUID, repona
 	return nil
 }
 
-func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
+func DeleteWebhook(userId uuid.UUID, installationId int, username string, reponame string, hookId int) error {
+	token, err := generateAccessToken(installationId, userId)
+	if err != nil {
+		return err
+	}
 
+	client := &http.Client{}
+
+	// Create request
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks/%d", username, reponame, hookId), nil)
+	if err != nil {
+		return err
+	}
+
+	// Add headers
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	// Send request
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusNoContent {
+		var message struct {
+			Message string `json:"message"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&message); err != nil {
+			return fmt.Errorf("unexpected response status: %s", resp.Status)
+		}
+		return fmt.Errorf("GitHub API error: %s", message.Message)
+
+	}
+
+	return nil
+}
+
+func DeleteAllWebhooks(userId uuid.UUID, db types.InstallationStore) error {
 	log.Printf("Deleting webhooks for user %s", userId)
 	// get the installation id
 	installationId, err := db.GetInstallationIDByUser(userId)
@@ -110,8 +151,6 @@ func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
 		return err
 	}
 
-	log.Printf("Username: %s", user.Username)
-
 	// get all repos for the user that is on the NotificationSubscription
 	repos, err := db.GetAllReposFromUserInNotificationSubscription(userId)
 	if err != nil {
@@ -123,6 +162,7 @@ func DeleteWebhook(userId uuid.UUID, db types.InstallationStore) error {
 		err = deleteWebhook(installationId, user, repo.RepoName, userId)
 		if err != nil {
 			return err
+
 		}
 	}
 	return nil
@@ -169,9 +209,19 @@ func deletePayloadToGitHub(url, token string) error {
 	}
 	defer resp.Body.Close()
 
-	// Check the response status
-	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to delete hook: %s", resp.Status)
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var ghErr types.GitHubError
+		if err := json.Unmarshal(body, &ghErr); err != nil {
+			return fmt.Errorf("unexpected response status: %s", resp.Status)
+		}
+		return fmt.Errorf("GitHub API error: %s, Details: %+v", ghErr.Message, ghErr.Errors)
+
 	}
 
 	return nil
@@ -195,8 +245,6 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 
 	client := &http.Client{}
 
-	//prinft payload
-
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payloadBytes))
 	if err != nil {
 		return err
@@ -215,9 +263,22 @@ func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 	}
 	defer resp.Body.Close()
 
-	// Check the response status code
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		var message struct {
+			Message string `json:"message"`
+		}
+
+		if err := json.Unmarshal(body, &message); err != nil {
+			return fmt.Errorf("unexpected response status: %s", resp.Status)
+		}
+
+		return fmt.Errorf("GitHub API error: %s", message.Message)
 	}
 
 	return nil
@@ -252,8 +313,22 @@ func updatePayloadToGithub(url, token string, addedEvents, removedEvents []strin
 	}
 	defer resp.Body.Close()
 
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		log.Printf("status code: %d", resp.StatusCode)
+		var messages struct {
+			Message string `json:"message"`
+		}
+		if err := json.Unmarshal(body, &messages); err != nil {
+			return fmt.Errorf("unexpected response status: %s", resp.Status)
+		}
+
+		return fmt.Errorf("GitHub API error: %s", messages.Message)
 	}
 
 	return nil

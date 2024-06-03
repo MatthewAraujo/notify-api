@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/MatthewAraujo/notify/types"
@@ -41,13 +42,13 @@ func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := h.store.CheckIfNotificationExists(id)
+	notif, err := h.store.GetNotificationById(id)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if !exists {
+	if notif.ID == uuid.Nil {
 		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("notification not found"))
 		return
 	}
@@ -58,8 +59,31 @@ func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if owner == uuid.Nil {
+	if owner.ID == uuid.Nil {
 		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("you do not own this notification"))
+		return
+	}
+
+	repo, err := h.store.GetRepoById(notif.RepoID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if repo.ID == uuid.Nil {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
+		return
+	}
+
+	installationId, err := h.store.GetInstallationIDByUser(owner.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = DeleteWebhook(owner.ID, installationId, owner.Username, repo.RepoName, notif.HookID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -189,16 +213,6 @@ func (h *Handler) EditNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notif := &types.NotificationSubscription{
-		UserID: user.ID,
-		RepoID: repo,
-	}
-
-	if err := h.store.CreateNotification(notif); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
 	for range payload.Events.Remove {
 		if err := h.store.DeleteEventForRepo(repo); err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
@@ -233,15 +247,20 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("user not found"))
 		return
 	}
-
+	log.Printf("Pegando installationId")
 	installationId, err := h.store.GetInstallationIDByUser(user.ID)
 	if err != nil {
+		if err.Error() == "installation not found" {
+			utils.WriteError(w, http.StatusNotFound, fmt.Errorf("installation not found"))
+			return
+		}
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	for _, repo := range payload.Repos {
 		// check if the repo already exists
+		log.Printf("Checking if repo exists")
 		exists, err := h.store.CheckIfRepoExists(repo.RepoName)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
@@ -252,6 +271,7 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 			utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
 			return
 		}
+		log.Printf("Pegando repoId")
 		repoId, err := h.store.GetRepoIDByName(repo.RepoName)
 		if err != nil {
 			if err.Error() == "repo not found" {
@@ -261,6 +281,7 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 		}
 		// check if the notification already exists
+		log.Printf("Checking if notification exists")
 		exists, err = h.store.CheckIfNotificationExistsForUserId(user.ID, repoId)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
