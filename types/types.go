@@ -69,7 +69,8 @@ type NotificationStore interface {
 	CheckIfNotificationExists(id uuid.UUID) (bool, error)
 	CheckIfNotificationExistsForUserId(userId uuid.UUID, repoId uuid.UUID) (bool, error)
 	CreateNotification(notif *NotificationSubscription) error
-	GetOwnerOfNotification(id uuid.UUID) (uuid.UUID, error)
+	GetOwnerOfNotification(id uuid.UUID) (User, error)
+	GetNotificationById(id uuid.UUID) (*NotificationSubscription, error)
 	DeleteNotification(id uuid.UUID) error
 
 	//User
@@ -80,6 +81,7 @@ type NotificationStore interface {
 	GetRepoIDByName(repoName string) (uuid.UUID, error)
 	CheckIfRepoExists(repoName string) (bool, error)
 	CheckIfRepoHasEventById(repoId uuid.UUID, eventTypeName uuid.UUID) (bool, error)
+	GetRepoById(repoId uuid.UUID) (Repository, error)
 
 	//Installation
 	GetInstallationIDByUser(userId uuid.UUID) (int, error)
@@ -131,7 +133,7 @@ type Installation struct {
 }
 
 type InstallationStore interface {
-	GetUserIdByUsername(username string) (uuid.UUID, error)
+	GetUserIdByUsername(username string) (User, error)
 	CreateInstallation(userId uuid.UUID, installationId int) error
 	CreateRepository(userId uuid.UUID, repoName string) error
 	CheckIfRepoExists(repoName string) (bool, error)
@@ -163,6 +165,7 @@ type NotificationSubscription struct {
 	ID        uuid.UUID `json:"id"`
 	UserID    uuid.UUID `json:"user_id"`
 	RepoID    uuid.UUID `json:"repo_id"`
+	HookID    int       `json:"hook_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

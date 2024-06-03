@@ -43,7 +43,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		userId, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
+		user, err := h.store.GetUserIdByUsername(payload.Installation.Account.Login)
 		if err != nil && err.Error() == "user not found" {
 			log.Printf("User not found for %s", payload.Installation.Account.Login)
 			return
@@ -52,7 +52,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 		installationId := payload.Installation.Id
 
 		//Check if the installation already exists
-		exists, err := h.store.CheckIfInstallationExists(userId)
+		exists, err := h.store.CheckIfInstallationExists(user.ID)
 		if err != nil {
 			return
 		}
@@ -62,7 +62,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := h.store.CreateInstallation(userId, installationId); err != nil {
+		if err := h.store.CreateInstallation(user.ID, installationId); err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -79,7 +79,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if err := h.store.CreateRepository(userId, repo.Name); err != nil {
+			if err := h.store.CreateRepository(user.ID, repo.Name); err != nil {
 				log.Printf("Error creating repository for %s", repo.Name)
 				return
 			}
@@ -135,7 +135,7 @@ func (h *Handler) installationHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Removing subscription for %s", userId)
 
 		// remove on github
-		err = notifications.DeleteWebhook(userId, h.store)
+		err = notifications.DeleteAllWebhooks(userId, h.store)
 		if err != nil {
 			return
 		}
@@ -160,8 +160,6 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Received webhook for %d", payload.HookId)
-
 	hook, err := h.store.CheckIfHookIdExistsInNotificationSubscription(payload.HookId)
 	if err != nil {
 		return
@@ -181,11 +179,16 @@ func (h *Handler) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if strings.Contains(payload.Ref, "refs/heads/") {
+		user, err := h.store.GetUserIdByUsername(payload.Repository.Owner.Name)
+		if err != nil {
+			return
+		}
+
 		bodyEmail := types.SendEmail{
 			RepoName: payload.Repository.FullName,
 			Sender:   payload.Repository.Owner.Name,
 			Commit:   payload.Commits[0].Message,
-			Email:    payload.Repository.Owner.Email,
+			Email:    user.Email,
 		}
 
 		go mailer.SendMail(bodyEmail)

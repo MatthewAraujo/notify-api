@@ -15,9 +15,10 @@ type SMTP struct {
 }
 
 type Config struct {
-	Port     string
-	TursoURl string
-	SMTP     SMTP
+	Port       string
+	TursoURl   string
+	SMTP       SMTP
+	WebhookUrl string
 }
 
 var Envs = initConfig()
@@ -29,8 +30,9 @@ func initConfig() Config {
 	tursoToken := getEnv("TURSO_AUTH_TOKEN", "mytoken")
 
 	return Config{
-		Port:     getEnv("PORT", "8080"),
-		TursoURl: fmt.Sprintf("%s?authToken=%s", tursoUrl, tursoToken),
+		Port:       getEnv("PORT", "8080"),
+		WebhookUrl: getEnv("WEBHOOK_TEST", "localhost:8080"),
+		TursoURl:   fmt.Sprintf("%s?authToken=%s", tursoUrl, tursoToken),
 		SMTP: SMTP{
 			Host:     getEnv("SMTP_HOST", "smtp.gmail.com"),
 			Port:     getEnv("SMTP_PORT", "587"),

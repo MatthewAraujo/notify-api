@@ -42,13 +42,13 @@ func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := h.store.CheckIfNotificationExists(id)
+	notif, err := h.store.GetNotificationById(id)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if !exists {
+	if notif.ID == uuid.Nil {
 		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("notification not found"))
 		return
 	}
@@ -59,8 +59,31 @@ func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if owner == uuid.Nil {
+	if owner.ID == uuid.Nil {
 		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("you do not own this notification"))
+		return
+	}
+
+	repo, err := h.store.GetRepoById(notif.RepoID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if repo.ID == uuid.Nil {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
+		return
+	}
+
+	installationId, err := h.store.GetInstallationIDByUser(owner.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = DeleteWebhook(owner.ID, installationId, owner.Username, repo.RepoName, notif.HookID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -186,16 +209,6 @@ func (h *Handler) EditNotification(w http.ResponseWriter, r *http.Request) {
 
 	err = UpdateWebhook(user.Username, user.ID, payload.RepoName, payload.Events, h.store)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	notif := &types.NotificationSubscription{
-		UserID: user.ID,
-		RepoID: repo,
-	}
-
-	if err := h.store.CreateNotification(notif); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}

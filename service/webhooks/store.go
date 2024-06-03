@@ -21,14 +21,19 @@ func NewStore(db *sql.DB) *Store {
 	}
 }
 
-func (s *Store) GetUserIdByUsername(username string) (uuid.UUID, error) {
+func (s *Store) GetUserIdByUsername(username string) (types.User, error) {
 	var userId uuid.UUID
-	err := s.db.QueryRow("SELECT id FROM user WHERE username = ?", username).Scan(&userId)
+	var email string
+	err := s.db.QueryRow("SELECT id, email FROM User WHERE username = ?", username).Scan(&userId, &email)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("user not found")
+		return types.User{}, err
 	}
 
-	return userId, nil
+	return types.User{
+		ID:       userId,
+		Username: username,
+		Email:    email,
+	}, nil
 }
 
 func (s *Store) CreateInstallation(userId uuid.UUID, installationId int) error {

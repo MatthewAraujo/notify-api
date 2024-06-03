@@ -18,7 +18,7 @@ func GenerateJWT() (string, error) {
 	app_id := os.Getenv("APP_ID")
 	payload := jwt.MapClaims{
 		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(10 * time.Minute).Unix(),
+		"exp": time.Now().Add(10 * time.Second).Unix(),
 		"iss": app_id,
 	}
 

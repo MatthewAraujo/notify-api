@@ -19,16 +19,42 @@ func NewStore(db *sql.DB) *Store {
 }
 
 // Notification
-func (s *Store) GetOwnerOfNotification(id uuid.UUID) (uuid.UUID, error) {
-	var userID uuid.UUID
-	// select repo_id from notification where id = ?
-	// select user_id from repository where id = ?
+func (s *Store) GetNotificationById(id uuid.UUID) (*types.NotificationSubscription, error) {
+	rows, err := s.db.Query("SELECT id, repo_id, hook_id FROM NotificationSubscription WHERE id = ?", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
+	n := new(types.NotificationSubscription)
+
+	for rows.Next() {
+		n, err = s.scanRowIntoNotification(rows)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if n.ID == uuid.Nil {
+		return nil, fmt.Errorf("notification not found")
+	}
+
+	return n, nil
+}
+
+func (s *Store) GetOwnerOfNotification(id uuid.UUID) (types.User, error) {
+	var userID uuid.UUID
 	err := s.db.QueryRow("SELECT user_id FROM repository WHERE id = (SELECT repo_id FROM NotificationSubscription WHERE id = ?)", id).Scan(&userID)
 	if err != nil {
-		return uuid.Nil, err
+		return types.User{}, fmt.Errorf("user not found")
 	}
-	return userID, nil
+
+	user, err := s.GetUserByID(userID)
+	if err != nil {
+		return types.User{}, err
+	}
+
+	return *user, nil
 }
 
 func (s *Store) DeleteNotification(id uuid.UUID) error {
@@ -150,6 +176,15 @@ func (s *Store) GetInstallationIDByUser(id uuid.UUID) (int, error) {
 }
 
 // Repo
+func (s *Store) GetRepoById(id uuid.UUID) (types.Repository, error) {
+	var repo types.Repository
+	err := s.db.QueryRow("SELECT id, repo_name, user_id, created_at FROM repository WHERE id = ?", id).Scan(&repo.ID, &repo.RepoName, &repo.UserID, &repo.CreatedAt)
+	if err != nil {
+		return types.Repository{}, fmt.Errorf("repo not found")
+	}
+
+	return repo, nil
+}
 
 func (s *Store) GetRepoIDByName(name string) (uuid.UUID, error) {
 	var id uuid.UUID
@@ -200,4 +235,12 @@ func (s *Store) scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (s *Store) scanRowIntoNotification(rows *sql.Rows) (*types.NotificationSubscription, error) {
+	var notification types.NotificationSubscription
+	if err := rows.Scan(&notification.ID, &notification.RepoID, &notification.HookID); err != nil {
+		return nil, err
+	}
+	return &notification, nil
 }
