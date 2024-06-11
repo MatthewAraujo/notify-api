@@ -10,6 +10,7 @@ import (
 	"github.com/MatthewAraujo/notify/service/user"
 	"github.com/MatthewAraujo/notify/service/webhooks"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type APIServer struct {
@@ -26,6 +27,15 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 
 func (s *APIServer) Start() error {
 	router := mux.NewRouter()
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // Permitir todos os domínios
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	router.Use(c.Handler)
+
 	// if the api changes in the future we can just change the version here, and the old version will still be available
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 
