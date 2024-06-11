@@ -111,6 +111,14 @@ func (s *Handler) getAuthCallbackFunction(w http.ResponseWriter, r *http.Request
 				return
 			}
 
+			http.SetCookie(w, &http.Cookie{
+				Name:     "username",
+				Value:    user.Name,
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   false,
+			})
+
 			http.Redirect(w, r, "http://localhost:3000/", http.StatusFound)
 
 			return
