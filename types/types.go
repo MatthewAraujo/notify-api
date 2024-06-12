@@ -184,9 +184,9 @@ type RepositoryStore interface {
 }
 
 type ReposWithEvents struct {
-	RepoId   uuid.UUID `json:"repo_id"`
-	RepoName string    `json:"repo_name"`
-	Events   []EventType
+	RepoId   uuid.UUID   `json:"repo_id"`
+	RepoName string      `json:"repo_name"`
+	Events   []EventType `json:"events"`
 }
 
 type RepositoryEventType struct {
