@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/MatthewAraujo/notify/types"
+	"github.com/google/uuid"
 )
 
 type Store struct {
@@ -17,7 +18,7 @@ func NewStore(db *sql.DB) *Store {
 }
 
 // Repository
-func (s *Store) GetAllRepositoryForUser(username string) ([]types.Repository, error) {
+func (s *Store) GetAllRepositoryForUser(username string) ([]types.ReposWithEvents, error) {
 	query := `
  SELECT 
     r.id AS repo_id,
@@ -33,7 +34,7 @@ JOIN
 JOIN 
     EventType et ON e.event_type = et.id
 WHERE 
-    u.username = 'specific_username';`
+    u.username = ? ;`
 	rows, err := s.db.Query(query, username)
 	if err != nil {
 		return nil, err
@@ -54,26 +55,28 @@ WHERE
 		return nil, err
 	}
 
-	repos := make(map[string]*types.Repository)
+	repoMap := make(map[uuid.UUID]*types.ReposWithEvents)
 	for _, ret := range results {
-		if _, ok := repos[ret.RepoID]; !ok {
-			repos[ret.RepoID] = &types.Repository{
-				ID:       ret.RepoID,
+		if _, ok := repoMap[ret.RepoID]; !ok {
+			repoMap[ret.RepoID] = &types.ReposWithEvents{
+				RepoId:   ret.RepoID,
 				RepoName: ret.RepoName,
+				Events:   []types.EventType{},
 			}
 		}
-		repos[ret.RepoID].Events = append(repos[ret.RepoID].Events, types.EventType{
+		repoMap[ret.RepoID].Events = append(repoMap[ret.RepoID].Events, types.EventType{
 			ID:        ret.EventTypeID,
 			EventName: ret.EventName,
 		})
-
-		var repositories []types.Repository
-		for _, repo := range repos {
-			repositories = append(repositories, *repo)
-		}
-		return repositories, nil
-
 	}
+
+	var repos []types.ReposWithEvents
+	for _, v := range repoMap {
+		repos = append(repos, *v)
+	}
+
+	return repos, nil
+}
 
 func (s *Store) scanRowIntoRepository(rows *sql.Rows) (*types.Repository, error) {
 	var r types.Repository

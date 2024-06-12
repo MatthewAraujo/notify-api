@@ -6,7 +6,6 @@ import (
 
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -26,15 +25,9 @@ func (h *Handler) Register(router *mux.Router) {
 
 func (h *Handler) GetAllRepositoryForUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	str, ok := vars["username"]
+	username, ok := vars["username"]
 	if !ok {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing id"))
-		return
-	}
-
-	username, err := uuid.Parse(str)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid id"))
 		return
 	}
 
