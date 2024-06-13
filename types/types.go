@@ -106,6 +106,7 @@ type Notifications struct {
 type User struct {
 	ID        uuid.UUID
 	Username  string    `json:"username"`
+	AvatarURL string    `json:"avatar_url"`
 	Email     string    `json:"email"`
 	SoftDel   bool      `json:"soft_del"`
 	CreatedAt time.Time `json:"created_at"`

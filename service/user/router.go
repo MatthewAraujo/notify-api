@@ -98,26 +98,18 @@ func (s *Handler) getAuthCallbackFunction(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	_, err = s.store.GetUserByEmail(user.Email)
+	err = s.store.CreateUser(&types.User{
+		Username:  user.NickName,
+		Email:     user.Email,
+		AvatarURL: user.AvatarURL,
+	})
+
 	if err != nil {
-		if err.Error() == "user not found" {
-			err := s.store.CreateUser(&types.User{
-				Username: user.Name,
-				Email:    user.Email,
-			})
-
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			http.Redirect(w, r, "http://localhost:3000/", http.StatusFound)
-
-			return
-		}
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	urlRedirect := "http://localhost:3000/installation"
+	http.Redirect(w, r, urlRedirect, http.StatusFound)
 
 }
 
