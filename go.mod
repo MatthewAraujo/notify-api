@@ -17,6 +17,7 @@ require (
 	github.com/gorilla/sessions v1.2.2 // indirect
 	github.com/libsql/sqlite-antlr4-parser v0.0.0-20240327125255-dbf53b6cbf06 // indirect
 	github.com/markbates/goth v1.80.0 // indirect
+	github.com/rs/cors v1.11.0 // indirect
 	github.com/tursodatabase/go-libsql v0.0.0-20240429120401-651096bbee0b // indirect
 	github.com/tursodatabase/libsql-client-go v0.0.0-20240416075003-747366ff79c4 // indirect
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect

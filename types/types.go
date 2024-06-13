@@ -180,6 +180,23 @@ type AccessToken struct {
 	UserId uuid.UUID `json:"user_id"`
 }
 
+type RepositoryStore interface {
+	GetAllRepositoryForUser(username string) ([]ReposWithEvents, error)
+}
+
+type ReposWithEvents struct {
+	RepoId   uuid.UUID   `json:"repo_id"`
+	RepoName string      `json:"repo_name"`
+	Events   []EventType `json:"events"`
+}
+
+type RepositoryEventType struct {
+	RepoID      uuid.UUID
+	RepoName    string
+	EventTypeID uuid.UUID
+	EventName   string
+}
+
 type EditNotification struct {
 	RepoName string `json:"repo_name"`
 
