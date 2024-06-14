@@ -81,9 +81,35 @@ func (s *Store) DeleteUser(id uuid.UUID) error {
 	return nil
 }
 
+func (s *Store) GetUserByUsername(username string) (*types.User, error) {
+	rows, err := s.db.Query("SELECT id, username, avatar_url FROM user WHERE username = ?", username)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	u := new(types.User)
+
+	for rows.Next() {
+		u, err = s.scanRowIntoUser(rows)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if u.ID == uuid.Nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return u, nil
+
+}
+
 func (s *Store) scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	var user types.User
-	err := rows.Scan(&user.ID, &user.Username)
+	err := rows.Scan(&user.ID, &user.Username, &user.AvatarURL)
 	if err != nil {
 		return nil, err
 	}

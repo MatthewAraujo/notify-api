@@ -117,6 +117,7 @@ type UserStore interface {
 	CreateUser(user *User) error
 	DeleteUser(id uuid.UUID) error
 	GetUserByEmail(email string) (*User, error)
+	GetUserByUsername(username string) (*User, error)
 }
 
 type Repository struct {
