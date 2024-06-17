@@ -78,6 +78,47 @@ WHERE
 	return repos, nil
 }
 
+func (s *Store) GetAllReposForUser(username string) ([]types.Repository, error) {
+	query := `SELECT r.id, r.repo_name FROM Repository r JOIN User u ON r.user_id = u.id WHERE u.username = ?;`
+	rows, err := s.db.Query(query, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var repos []types.Repository
+	for rows.Next() {
+		repo, err := s.scanRowIntoRepository(rows)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, *repo)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return repos, nil
+}
+
+func (s *Store) IsRepoSubscribed(username string, repoId uuid.UUID) (bool, error) {
+	query := `
+SELECT COUNT(*)
+FROM NotificationSubscription ns
+JOIN Repository r ON ns.repo_id = r.id
+JOIN User u ON r.user_id = u.id
+WHERE u.username = ? AND r.id = ? AND ns.removed = FALSE;
+`
+	var count int
+	err := s.db.QueryRow(query, username, repoId).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 func (s *Store) scanRowIntoRepository(rows *sql.Rows) (*types.Repository, error) {
 	var r types.Repository
 	err := rows.Scan(&r.ID, &r.RepoName)

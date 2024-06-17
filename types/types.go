@@ -182,7 +182,9 @@ type AccessToken struct {
 }
 
 type RepositoryStore interface {
+	GetAllReposForUser(username string) ([]Repository, error)
 	GetAllRepositoryForUser(username string) ([]ReposWithEvents, error)
+	IsRepoSubscribed(username string, repoId uuid.UUID) (bool, error)
 }
 
 type ReposWithEvents struct {
