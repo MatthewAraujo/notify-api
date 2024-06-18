@@ -2,9 +2,9 @@ package events
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/MatthewAraujo/notify/types"
-	"github.com/google/uuid"
 )
 
 type Store struct {
@@ -38,22 +38,26 @@ func (s *Store) GetAllEvents() ([]types.EventType, error) {
 	return events, nil
 }
 
-func (s *Store) GetAllEventsForRepo(repoId uuid.UUID) ([]types.EventType, error) {
+func (s *Store) GetAllEventsForRepo(reponame string) ([]types.EventType, error) {
 	query := `
-SELECT * FROM Event WHERE repo_id = ? ORDER BY event_name ASC
-;
+SELECT e.*, r.repo_name, r.user_id
+FROM Event e
+JOIN Repository r ON e.repo_id = r.id
+WHERE r.repo_name = 'chiclete'
+ORDER BY e.created_at ASC;
 `
 
-	rows, err := s.db.Query(query, repoId)
+	rows, err := s.db.Query(query, reponame)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	events := make([]types.EventType, 0)
+	var forms types.FormSubscription
+	var events []types.EventType
 
 	for rows.Next() {
-		e := types.EventType{}
+		var e types.EventType
 		err = rows.Scan(&e.ID, &e.EventName, &e.Description)
 		if err != nil {
 			return nil, err
@@ -61,5 +65,20 @@ SELECT * FROM Event WHERE repo_id = ? ORDER BY event_name ASC
 		events = append(events, e)
 	}
 
+	forms.Events = events
+	log.Printf("events: %v", events)
+	log.Printf("forms: %v", forms)
+
 	return events, nil
+
+}
+
+func (s *Store) GetUserIDFromRepoName(reponame string) string {
+	var userId string
+	query := "SELECT user_id FROM Repository WHERE repo_name = ?;"
+	err := s.db.QueryRow(query, reponame).Scan(&userId)
+	if err != nil {
+		return ""
+	}
+	return userId
 }

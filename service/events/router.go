@@ -6,7 +6,6 @@ import (
 
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -22,7 +21,7 @@ func NewHandler(store types.EventStore) *Handler {
 
 func (h *Handler) Register(router *mux.Router) {
 	router.HandleFunc("/events", h.getAllEvents).Methods(http.MethodGet)
-	router.HandleFunc("/events/{repoId}", h.getEventsByRepo).Methods(http.MethodGet)
+	router.HandleFunc("/events/{reponame}", h.getEventsByRepo).Methods(http.MethodGet)
 }
 
 func (h *Handler) getAllEvents(w http.ResponseWriter, r *http.Request) {
@@ -37,22 +36,36 @@ func (h *Handler) getAllEvents(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getEventsByRepo(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	repoId, ok := vars["repoId"]
+	repoName, ok := vars["reponame"]
 	if !ok {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("missing repo name"))
 		return
 	}
 
-	id, err := uuid.Parse(repoId)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid repo id"))
+	userId := h.store.GetUserIDFromRepoName(repoName)
+	if userId == "" {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
 		return
 	}
 
-	events, err := h.store.GetAllEventsForRepo(id)
+	events, err := h.store.GetAllEventsForRepo(repoName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if len(events) == 0 {
+		utils.WriteJSON(w, http.StatusOK, userId)
+	} else {
+		userWithEvents := struct {
+			UserID   string            `json:"user_id"`
+			Events   []types.EventType `json:"events"`
+			Reponame string            `json:"reponame"`
+		}{}
+		userWithEvents.UserID = userId
+		userWithEvents.Events = events
+		userWithEvents.Reponame = repoName
+		utils.WriteJSON(w, http.StatusOK, userWithEvents)
 	}
 
 	utils.WriteJSON(w, http.StatusOK, events)

@@ -216,5 +216,12 @@ type Events struct {
 
 type EventStore interface {
 	GetAllEvents() ([]EventType, error)
-	GetAllEventsForRepo(repoId uuid.UUID) ([]EventType, error)
+	GetAllEventsForRepo(reponame string) ([]EventType, error)
+	GetUserIDFromRepoName(reponame string) string
+}
+
+type FormSubscription struct {
+	UserID uuid.UUID   `json:"user_id"`
+	RepoID uuid.UUID   `json:"repo_id"`
+	Events []EventType `json:"events"`
 }
