@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/MatthewAraujo/notify/service/events"
 	"github.com/MatthewAraujo/notify/service/health"
 	"github.com/MatthewAraujo/notify/service/notifications"
 	"github.com/MatthewAraujo/notify/service/repository"
@@ -60,6 +61,11 @@ func (s *APIServer) Start() error {
 	repositoryStore := repository.NewStore(s.db)
 	repositoryHandler := repository.NewHandler(repositoryStore)
 	repositoryHandler.Register(subrouter)
+
+	eventTypeStore := events.NewStore(s.db)
+	eventTypeHandler := events.NewHandler(eventTypeStore)
+	eventTypeHandler.Register(subrouter)
+
 	log.Println("Starting server on", s.addr)
 
 	return http.ListenAndServe(s.addr, router)

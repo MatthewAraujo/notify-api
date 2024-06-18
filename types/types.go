@@ -152,8 +152,9 @@ type InstallationStore interface {
 }
 
 type EventType struct {
-	ID        uuid.UUID `json:"id"`
-	EventName string    `json:"event_name"`
+	ID          uuid.UUID `json:"id"`
+	EventName   string    `json:"event_name"`
+	Description string    `json:"description"`
 }
 
 type Event struct {
@@ -211,4 +212,9 @@ type EditNotification struct {
 type Events struct {
 	Added  []string `json:"added"`
 	Remove []string `json:"remove"`
+}
+
+type EventStore interface {
+	GetAllEvents() ([]EventType, error)
+	GetAllEventsForRepo(repoId uuid.UUID) ([]EventType, error)
 }
