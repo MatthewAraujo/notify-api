@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/MatthewAraujo/notify/service/events"
 	"github.com/MatthewAraujo/notify/service/health"
 	"github.com/MatthewAraujo/notify/service/notifications"
+	"github.com/MatthewAraujo/notify/service/repository"
 	"github.com/MatthewAraujo/notify/service/user"
 	"github.com/MatthewAraujo/notify/service/webhooks"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type APIServer struct {
@@ -26,6 +29,15 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 
 func (s *APIServer) Start() error {
 	router := mux.NewRouter()
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // Permitir todos os domínios
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	router.Use(c.Handler)
+
 	// if the api changes in the future we can just change the version here, and the old version will still be available
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 
@@ -45,6 +57,15 @@ func (s *APIServer) Start() error {
 	webhooksStore := webhooks.NewStore(s.db)
 	webhooksHandler := webhooks.NewHandler(webhooksStore)
 	webhooksHandler.Register(subrouter)
+
+	repositoryStore := repository.NewStore(s.db)
+	repositoryHandler := repository.NewHandler(repositoryStore)
+	repositoryHandler.Register(subrouter)
+
+	eventTypeStore := events.NewStore(s.db)
+	eventTypeHandler := events.NewHandler(eventTypeStore)
+	eventTypeHandler.Register(subrouter)
+
 	log.Println("Starting server on", s.addr)
 
 	return http.ListenAndServe(s.addr, router)

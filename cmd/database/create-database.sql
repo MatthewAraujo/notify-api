@@ -1,6 +1,7 @@
 CREATE TABLE User (
     id TEXT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
+    avatar_url VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     soft_deleted BOOLEAN DEFAULT FALSE
@@ -24,7 +25,8 @@ CREATE TABLE Installation (
 
 CREATE TABLE EventType (
     id TEXT PRIMARY KEY,
-    event_name VARCHAR(255) NOT NULL
+    event_name VARCHAR(255) NOT NULL,
+    description_text TEXT NOT NULL
 );
 
 CREATE TABLE Event (

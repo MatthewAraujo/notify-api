@@ -106,6 +106,7 @@ type Notifications struct {
 type User struct {
 	ID        uuid.UUID
 	Username  string    `json:"username"`
+	AvatarURL string    `json:"avatar_url"`
 	Email     string    `json:"email"`
 	SoftDel   bool      `json:"soft_del"`
 	CreatedAt time.Time `json:"created_at"`
@@ -116,6 +117,7 @@ type UserStore interface {
 	CreateUser(user *User) error
 	DeleteUser(id uuid.UUID) error
 	GetUserByEmail(email string) (*User, error)
+	GetUserByUsername(username string) (*User, error)
 }
 
 type Repository struct {
@@ -150,8 +152,9 @@ type InstallationStore interface {
 }
 
 type EventType struct {
-	ID        uuid.UUID `json:"id"`
-	EventName string    `json:"event_name"`
+	ID          uuid.UUID `json:"id"`
+	EventName   string    `json:"event_name"`
+	Description string    `json:"description"`
 }
 
 type Event struct {
@@ -179,6 +182,25 @@ type AccessToken struct {
 	UserId uuid.UUID `json:"user_id"`
 }
 
+type RepositoryStore interface {
+	GetAllReposForUser(username string) ([]Repository, error)
+	GetAllRepositoryForUser(username string) ([]ReposWithEvents, error)
+	IsRepoSubscribed(username string, repoId uuid.UUID) (bool, error)
+}
+
+type ReposWithEvents struct {
+	RepoId   uuid.UUID   `json:"repo_id"`
+	RepoName string      `json:"repo_name"`
+	Events   []EventType `json:"events"`
+}
+
+type RepositoryEventType struct {
+	RepoID      uuid.UUID
+	RepoName    string
+	EventTypeID uuid.UUID
+	EventName   string
+}
+
 type EditNotification struct {
 	RepoName string `json:"repo_name"`
 
@@ -190,4 +212,16 @@ type EditNotification struct {
 type Events struct {
 	Added  []string `json:"added"`
 	Remove []string `json:"remove"`
+}
+
+type EventStore interface {
+	GetAllEvents() ([]EventType, error)
+	GetAllEventsForRepo(reponame string) ([]EventType, error)
+	GetUserIDFromRepoName(reponame string) string
+}
+
+type FormSubscription struct {
+	UserID uuid.UUID   `json:"user_id"`
+	RepoID uuid.UUID   `json:"repo_id"`
+	Events []EventType `json:"events"`
 }
