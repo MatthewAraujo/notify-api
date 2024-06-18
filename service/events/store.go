@@ -2,7 +2,6 @@ package events
 
 import (
 	"database/sql"
-	"log"
 
 	"github.com/MatthewAraujo/notify/types"
 )
@@ -40,10 +39,11 @@ func (s *Store) GetAllEvents() ([]types.EventType, error) {
 
 func (s *Store) GetAllEventsForRepo(reponame string) ([]types.EventType, error) {
 	query := `
-SELECT e.*, r.repo_name, r.user_id
+SELECT et.id, et.event_name, et.description_text
 FROM Event e
 JOIN Repository r ON e.repo_id = r.id
-WHERE r.repo_name = 'chiclete'
+JOIN EventType et ON e.event_type = et.id
+WHERE r.repo_name = ?
 ORDER BY e.created_at ASC;
 `
 
@@ -53,24 +53,21 @@ ORDER BY e.created_at ASC;
 	}
 	defer rows.Close()
 
-	var forms types.FormSubscription
 	var events []types.EventType
 
 	for rows.Next() {
-		var e types.EventType
-		err = rows.Scan(&e.ID, &e.EventName, &e.Description)
-		if err != nil {
+		var event types.EventType
+		if err := rows.Scan(&event.ID, &event.EventName, &event.Description); err != nil {
 			return nil, err
 		}
-		events = append(events, e)
+		events = append(events, event)
 	}
 
-	forms.Events = events
-	log.Printf("events: %v", events)
-	log.Printf("forms: %v", forms)
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return events, nil
-
 }
 
 func (s *Store) GetUserIDFromRepoName(reponame string) string {

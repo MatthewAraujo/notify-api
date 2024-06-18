@@ -55,7 +55,14 @@ func (h *Handler) getEventsByRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(events) == 0 {
-		utils.WriteJSON(w, http.StatusOK, userId)
+		payload := struct {
+			UserID   string `json:"user_id"`
+			Reponame string `json:"reponame"`
+		}{}
+		payload.UserID = userId
+		payload.Reponame = repoName
+
+		utils.WriteJSON(w, http.StatusOK, payload)
 	} else {
 		userWithEvents := struct {
 			UserID   string            `json:"user_id"`
@@ -65,8 +72,7 @@ func (h *Handler) getEventsByRepo(w http.ResponseWriter, r *http.Request) {
 		userWithEvents.UserID = userId
 		userWithEvents.Events = events
 		userWithEvents.Reponame = repoName
+
 		utils.WriteJSON(w, http.StatusOK, userWithEvents)
 	}
-
-	utils.WriteJSON(w, http.StatusOK, events)
 }
