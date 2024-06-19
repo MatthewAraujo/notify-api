@@ -258,76 +258,73 @@ func (h *Handler) CreateNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, repo := range payload.Repos {
-		// check if the repo already exists
-		log.Printf("Checking if repo exists")
-		exists, err := h.store.CheckIfRepoExists(repo.RepoName)
+	// check if the repo already exists
+	log.Printf("Checking if repo exists")
+	exists, err := h.store.CheckIfRepoExists(payload.RepoName)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if !exists {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
+		return
+	}
+	log.Printf("Pegando repoId")
+	repoId, err := h.store.GetRepoIDByName(payload.RepoName)
+	if err != nil {
+		if err.Error() == "repo not found" {
+			utils.WriteError(w, http.StatusNotFound, err)
+			return
+		}
+		utils.WriteError(w, http.StatusInternalServerError, err)
+	}
+	// check if the notification already exists
+	log.Printf("Checking if notification exists")
+	exists, err = h.store.CheckIfNotificationExistsForUserId(user.ID, repoId)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if exists {
+		utils.WriteError(w, http.StatusConflict, fmt.Errorf("notification already exists"))
+		return
+	}
+
+	err = CreateWebhook(installationId, user.Username, user.ID, payload.RepoName, payload.Events)
+
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	for _, event := range payload.Events {
+		eventId, err := h.store.GetEventTypeByName(event)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		if !exists {
-			utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
-			return
+		event := &types.Event{
+			RepoID:    repoId,
+			EventType: eventId,
 		}
-		log.Printf("Pegando repoId")
-		repoId, err := h.store.GetRepoIDByName(repo.RepoName)
-		if err != nil {
-			if err.Error() == "repo not found" {
-				utils.WriteError(w, http.StatusNotFound, err)
-				return
-			}
-			utils.WriteError(w, http.StatusInternalServerError, err)
-		}
-		// check if the notification already exists
-		log.Printf("Checking if notification exists")
-		exists, err = h.store.CheckIfNotificationExistsForUserId(user.ID, repoId)
-		if err != nil {
+
+		if err := h.store.CreateEvent(event); err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
+	}
 
-		if exists {
-			utils.WriteError(w, http.StatusConflict, fmt.Errorf("notification already exists"))
-			return
-		}
+	notif := &types.NotificationSubscription{
+		UserID: user.ID,
+		RepoID: repoId,
+	}
 
-		err = CreateWebhook(installationId, user.Username, user.ID, repo.RepoName, repo.Events)
-
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		for _, event := range repo.Events {
-			eventId, err := h.store.GetEventTypeByName(event)
-			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, err)
-				return
-			}
-
-			event := &types.Event{
-				RepoID:    repoId,
-				EventType: eventId,
-			}
-
-			if err := h.store.CreateEvent(event); err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, err)
-				return
-			}
-		}
-
-		notif := &types.NotificationSubscription{
-			UserID: user.ID,
-			RepoID: repoId,
-		}
-
-		if err := h.store.CreateNotification(notif); err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
-			return
-		}
-
+	if err := h.store.CreateNotification(notif); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("Notification created for %s", user.Username))

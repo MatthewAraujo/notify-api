@@ -6,6 +6,7 @@ import (
 
 	"github.com/MatthewAraujo/notify/types"
 	"github.com/MatthewAraujo/notify/utils"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -43,8 +44,14 @@ func (h *Handler) getEventsByRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := h.store.GetUserIDFromRepoName(repoName)
-	if userId == "" {
+	if userId == uuid.Nil {
 		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("repo not found"))
+		return
+	}
+
+	notificationSubscriptionId, err := h.store.GetNotificationSubscriptionId(userId, repoName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -56,8 +63,8 @@ func (h *Handler) getEventsByRepo(w http.ResponseWriter, r *http.Request) {
 
 	if len(events) == 0 {
 		payload := struct {
-			UserID   string `json:"user_id"`
-			Reponame string `json:"reponame"`
+			UserID   uuid.UUID `json:"user_id"`
+			Reponame string    `json:"reponame"`
 		}{}
 		payload.UserID = userId
 		payload.Reponame = repoName
@@ -65,13 +72,15 @@ func (h *Handler) getEventsByRepo(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSON(w, http.StatusOK, payload)
 	} else {
 		userWithEvents := struct {
-			UserID   string            `json:"user_id"`
-			Events   []types.EventType `json:"events"`
-			Reponame string            `json:"reponame"`
+			UserID                     uuid.UUID         `json:"user_id"`
+			Events                     []types.EventType `json:"events"`
+			Reponame                   string            `json:"reponame"`
+			NotificationSubscriptionId uuid.UUID         `json:"notification_subscription_id"`
 		}{}
 		userWithEvents.UserID = userId
 		userWithEvents.Events = events
 		userWithEvents.Reponame = repoName
+		userWithEvents.NotificationSubscriptionId = notificationSubscriptionId
 
 		utils.WriteJSON(w, http.StatusOK, userWithEvents)
 	}

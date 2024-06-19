@@ -32,7 +32,7 @@ func (s *APIServer) Start() error {
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"}, // Permitir todos os domínios
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowedHeaders:   []string{"Content-Type", "application/json"},
 		AllowCredentials: true,
 	})
 

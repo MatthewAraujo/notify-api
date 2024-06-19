@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/MatthewAraujo/notify/types"
+	"github.com/google/uuid"
 )
 
 type Store struct {
@@ -70,12 +71,45 @@ ORDER BY e.created_at ASC;
 	return events, nil
 }
 
-func (s *Store) GetUserIDFromRepoName(reponame string) string {
+func (s *Store) GetUserIDFromRepoName(reponame string) uuid.UUID {
 	var userId string
 	query := "SELECT user_id FROM Repository WHERE repo_name = ?;"
 	err := s.db.QueryRow(query, reponame).Scan(&userId)
+
 	if err != nil {
-		return ""
+		return uuid.Nil
 	}
-	return userId
+
+	id, err := uuid.Parse(userId)
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return id
+}
+
+//todo
+
+func (s *Store) GetNotificationSubscriptionId(userId uuid.UUID, reponame string) (uuid.UUID, error) {
+	query := `
+SELECT id
+FROM NotificationSubscription
+WHERE repo_id = (SELECT id FROM Repository WHERE repo_name = ? AND user_id = ?);
+
+`
+
+	var id string
+
+	err := s.db.QueryRow(query, reponame, userId).Scan(&id)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	subscriptionId, err := uuid.Parse(id)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return subscriptionId, nil
+
 }

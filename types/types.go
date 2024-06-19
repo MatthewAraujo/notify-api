@@ -96,11 +96,9 @@ type NotificationStore interface {
 	GetHookIdByRepoName(repoName string) (int, error)
 }
 type Notifications struct {
-	UserId uuid.UUID `json:"user_id"`
-	Repos  []struct {
-		RepoName string   `json:"repo_name"`
-		Events   []string `json:"events"`
-	} `json:"repos"`
+	UserId   uuid.UUID `json:"user_id"`
+	RepoName string    `json:"repo_name"`
+	Events   []string  `json:"events"`
 }
 
 type User struct {
@@ -217,7 +215,8 @@ type Events struct {
 type EventStore interface {
 	GetAllEvents() ([]EventType, error)
 	GetAllEventsForRepo(reponame string) ([]EventType, error)
-	GetUserIDFromRepoName(reponame string) string
+	GetUserIDFromRepoName(reponame string) uuid.UUID
+	GetNotificationSubscriptionId(userId uuid.UUID, reponame string) (uuid.UUID, error)
 }
 
 type FormSubscription struct {
