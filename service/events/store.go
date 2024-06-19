@@ -97,16 +97,19 @@ FROM NotificationSubscription
 WHERE repo_id = (SELECT id FROM Repository WHERE repo_name = ? AND user_id = ?);
 
 `
-
 	var id string
 
 	err := s.db.QueryRow(query, reponame, userId).Scan(&id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return uuid.Nil, nil
+		}
 		return uuid.Nil, err
 	}
 
 	subscriptionId, err := uuid.Parse(id)
 	if err != nil {
+
 		return uuid.Nil, err
 	}
 
