@@ -30,21 +30,19 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 func (s *APIServer) Start() error {
 	router := mux.NewRouter()
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // Allow only the specific origin
+		AllowedOrigins:   []string{"*"},
+		AllowOriginFunc:  func(origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"}, // Allow specific headers
+		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
-		Debug:            true, // Enable debug mode for CORS
+		Debug:            true,
 	})
 
 	router.Use(c.Handler)
 
-	// if the api changes in the future we can just change the version here, and the old version will still be available
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 
-	// create a new handler
 	healthHandler := health.NewHandler()
-	// register the handler
 	healthHandler.Register(subrouter)
 
 	userStore := user.NewStore(s.db)
