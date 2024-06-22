@@ -85,8 +85,6 @@ func updateWebhook(installationId int, username string, userId uuid.UUID, repona
 	githubUrl := "https://api.github.com/"
 	url := githubUrl + "repos/" + username + "/" + reponame + "/hooks" + fmt.Sprintf("/%d", hookId)
 
-	log.Printf("URL: %s", url)
-	log.Printf("access token: %s", token)
 	err = updatePayloadToGithub(url, token, addedEvents, removedEvents)
 	if err != nil {
 		return err

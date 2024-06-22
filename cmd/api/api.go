@@ -30,10 +30,11 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 func (s *APIServer) Start() error {
 	router := mux.NewRouter()
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // Permitir todos os domínios
+		AllowedOrigins:   []string{"*"}, // Allow only the specific origin
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "application/json"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"}, // Allow specific headers
 		AllowCredentials: true,
+		Debug:            true, // Enable debug mode for CORS
 	})
 
 	router.Use(c.Handler)
