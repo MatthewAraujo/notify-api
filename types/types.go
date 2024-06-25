@@ -144,6 +144,9 @@ type InstallationStore interface {
 	GetUserByID(id uuid.UUID) (*User, error)
 	GetAllReposFromUserInNotificationSubscription(userId uuid.UUID) ([]*Repository, error)
 
+	//NotificationSubscription
+	GetAllNotificationFromUser(userId uuid.UUID) ([]NotificationSubscription, error)
+
 	//Webhook
 	AddHookIdInNotificationSubscription(reponame string, hookId int) error
 	CheckIfHookIdExistsInNotificationSubscription(hookId int) (bool, error)

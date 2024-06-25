@@ -21,6 +21,27 @@ func NewStore(db *sql.DB) *Store {
 	}
 }
 
+// Subscription
+func (s *Store) GetAllNotificationFromUser(userId uuid.UUID) ([]types.NotificationSubscription, error) {
+	rows, err := s.db.Query("SELECT id, repo_id FROM NotificationSubscription WHERE repo_id = (SELECT id FROM repository WHERE user_id = ?)", userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var notifications []types.NotificationSubscription
+
+	for rows.Next() {
+		n, err := s.scanRowIntoNotification(rows)
+		if err != nil {
+			return nil, err
+		}
+		notifications = append(notifications, *n)
+	}
+
+	return notifications, nil
+}
+
 func (s *Store) GetUserIdByUsername(username string) (types.User, error) {
 	var userId uuid.UUID
 	var email string
@@ -227,4 +248,12 @@ func (s *Store) scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (s *Store) scanRowIntoNotification(rows *sql.Rows) (*types.NotificationSubscription, error) {
+	var notification types.NotificationSubscription
+	if err := rows.Scan(&notification.ID, &notification.RepoID, &notification.HookID); err != nil {
+		return nil, err
+	}
+	return &notification, nil
 }

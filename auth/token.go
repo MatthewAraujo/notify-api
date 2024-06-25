@@ -87,26 +87,79 @@ func RequestAccessToken(userId uuid.UUID, installationID int, jwtToken string) (
 	return accessTokenResp.Token, nil
 }
 
-func GetAccessToken(id uuid.UUID) (string, error) {
+func GetAccessToken(notificationSubscription uuid.UUID) (string, error) {
 	db, err := db.NewMySQLStorage(config.Envs.TursoURl)
 	if err != nil {
 		return "", err
 	}
 
 	var token string
-	err = db.QueryRow("SELECT token FROM AccessToken WHERE user_id = ?", id).Scan(&token)
+	err = db.QueryRow("SELECT token FROM NotificationSubscription WHERE id = ?", notificationSubscription).Scan(&token)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", fmt.Errorf("access token not found")
 		}
 		return "", err
 	}
-
-	if token == "" {
-		return "", fmt.Errorf("access token not found")
+	token, err = encrypt.DecryptToken(token)
+	if err != nil {
+		return "", err
 	}
 
 	return token, nil
+}
+
+func GenerateNewAccessToken(userId uuid.UUID, installationID int, jwtToken string) (string, error) {
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationID), bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return "", err
+	}
+
+	// Add headers
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Authorization", "Bearer "+jwtToken)
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	// Create HTTP client
+	client := &http.Client{}
+	// Send request
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("unexpected response status: %s", resp.Status)
+	}
+
+	// Parse the response
+	var accessTokenResp struct {
+		Token string `json:"token"`
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&accessTokenResp)
+	if err != nil {
+		return "", err
+	}
+
+	// Insert the access token into the database
+	token, err := encrypt.EncryptToken(accessTokenResp.Token)
+	if err != nil {
+		return "", err
+	}
+
+	err = insertAccessToken(&types.AccessToken{
+		Token:  token,
+		UserId: userId,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return accessTokenResp.Token, nil
 }
 
 func insertAccessToken(at *types.AccessToken) error {

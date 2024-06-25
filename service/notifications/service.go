@@ -16,7 +16,7 @@ import (
 
 func CreateWebhook(installationId int, username string, userId uuid.UUID, reponame string, events []string) error {
 
-	token, err := generateAccessToken(installationId, userId)
+	token, err := generateNewAccessToken(installationId, userId)
 	if err != nil {
 		return err
 	}
@@ -51,13 +51,7 @@ func CreateWebhook(installationId int, username string, userId uuid.UUID, repona
 	return nil
 }
 
-func UpdateWebhook(username string, userID uuid.UUID, reponame string, events types.Events, db types.NotificationStore) error {
-	// get the installation id
-	installationId, err := db.GetInstallationIDByUser(userID)
-	if err != nil {
-		return err
-	}
-
+func UpdateWebhook(username string, userID uuid.UUID, reponame string, events types.Events, db types.NotificationStore, notificationSubscription uuid.UUID) error {
 	// get the hook id
 	hookId, err := db.GetHookIdByRepoName(reponame)
 	if err != nil {
@@ -67,7 +61,7 @@ func UpdateWebhook(username string, userID uuid.UUID, reponame string, events ty
 	addedEvents := events.Added
 	removedEvents := events.Remove
 
-	err = updateWebhook(installationId, username, userID, reponame, addedEvents, removedEvents, hookId)
+	err = updateWebhook(username, reponame, addedEvents, removedEvents, hookId, notificationSubscription)
 	if err != nil {
 		return err
 	}
@@ -75,8 +69,8 @@ func UpdateWebhook(username string, userID uuid.UUID, reponame string, events ty
 	return nil
 }
 
-func updateWebhook(installationId int, username string, userId uuid.UUID, reponame string, addedEvents, removedEvents []string, hookId int) error {
-	token, err := generateAccessToken(installationId, userId)
+func updateWebhook(username string, reponame string, addedEvents, removedEvents []string, hookId int, notificationSubscription uuid.UUID) error {
+	token, err := getAccessToken(notificationSubscription)
 	if err != nil {
 		return err
 	}
@@ -93,8 +87,8 @@ func updateWebhook(installationId int, username string, userId uuid.UUID, repona
 	return nil
 }
 
-func DeleteWebhook(userId uuid.UUID, installationId int, username string, reponame string, hookId int) error {
-	token, err := generateAccessToken(installationId, userId)
+func DeleteWebhook(userId uuid.UUID, installationId int, username string, reponame string, hookId int, notificationSubscription uuid.UUID) error {
+	token, err := getAccessToken(notificationSubscription)
 	if err != nil {
 		return err
 	}
@@ -137,12 +131,6 @@ func DeleteWebhook(userId uuid.UUID, installationId int, username string, repona
 
 func DeleteAllWebhooks(userId uuid.UUID, db types.InstallationStore) error {
 	log.Printf("Deleting webhooks for user %s", userId)
-	// get the installation id
-	installationId, err := db.GetInstallationIDByUser(userId)
-	if err != nil {
-		return err
-	}
-
 	// get the username
 	user, err := db.GetUserByID(userId)
 	if err != nil {
@@ -155,20 +143,27 @@ func DeleteAllWebhooks(userId uuid.UUID, db types.InstallationStore) error {
 		return err
 	}
 
-	for _, repo := range repos {
-		log.Printf("Deleting webhook for %s", repo.RepoName)
-		err = deleteWebhook(installationId, user, repo.RepoName, userId)
-		if err != nil {
-			return err
+	// get all notification subscriptions for the user
+	notificationSubscriptions, err := db.GetAllNotificationFromUser(userId)
+	if err != nil {
+		return err
+	}
 
+	for _, notificationSubscription := range notificationSubscriptions {
+		for _, repo := range repos {
+			log.Printf("Deleting webhook for %s", repo.RepoName)
+			err = deleteWebhook(user, repo.RepoName, notificationSubscription.ID)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 	return nil
 }
 
-func deleteWebhook(installationId int, user *types.User, reponame string, userId uuid.UUID) error {
-
-	token, err := generateAccessToken(installationId, userId)
+func deleteWebhook(user *types.User, reponame string, notificationSubscription uuid.UUID) error {
+	token, err := getAccessToken(notificationSubscription)
 	if err != nil {
 		return err
 	}
@@ -225,20 +220,35 @@ func deletePayloadToGitHub(url, token string) error {
 	return nil
 }
 
+func getAccessToken(NotificationSubscriptionID uuid.UUID) (string, error) {
+	// get the access token
+	token, err := auth.GetAccessToken(NotificationSubscriptionID)
+	if err != nil {
+		return "", err
+	}
+
+	if token == "" {
+		return "", fmt.Errorf("access token not found")
+	}
+
+	return token, nil
+}
+
 // generate access token
-func generateAccessToken(installationId int, userId uuid.UUID) (string, error) {
+func generateNewAccessToken(installationId int, userId uuid.UUID) (string, error) {
 	jwt, err := auth.GenerateJWT()
 	if err != nil {
 		return "", err
 	}
 
-	accessToken, err := auth.RequestAccessToken(userId, installationId, jwt)
+	accessToken, err := auth.GenerateNewAccessToken(userId, installationId, jwt)
 	if err != nil {
 		return "", err
 	}
 
 	return accessToken, nil
 }
+
 func sendPayloadToGitHub(url, token string, payloadBytes []byte) error {
 
 	client := &http.Client{}

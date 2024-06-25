@@ -81,7 +81,7 @@ func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DeleteWebhook(owner.ID, installationId, owner.Username, repo.RepoName, notif.HookID)
+	err = DeleteWebhook(owner.ID, installationId, owner.Username, repo.RepoName, notif.HookID, id)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -207,7 +207,7 @@ func (h *Handler) EditNotification(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = UpdateWebhook(user.Username, user.ID, payload.RepoName, payload.Events, h.store)
+	err = UpdateWebhook(user.Username, user.ID, payload.RepoName, payload.Events, h.store, id)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
